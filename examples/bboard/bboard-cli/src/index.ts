@@ -261,7 +261,7 @@ const waitForFunds = (wallet: Wallet, logger: Logger) =>
       Rx.tap((state) => {
         const scanned = state.syncProgress?.synced ?? 0n;
         const total = state.syncProgress?.total.toString() ?? 'unknown number';
-        logger.info(`Wallet scanned ${scanned} blocks out of ${total}`);
+        logger.info(`Wallet processed ${scanned} indices out of ${total}`);
       }),
       Rx.filter((state) => {
         // Let's allow progress only if wallet is close enough

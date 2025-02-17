@@ -1,4 +1,6 @@
-include "std";
+pragma language_version >= 0.12.1;
+
+import CompactStandardLibrary;
 export { Maybe }
 
 // This contract is not intended to provide a production-grade user registration service. It is intended to be a simple

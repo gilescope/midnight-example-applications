@@ -125,7 +125,7 @@ export const waitForFunds = (wallet: Wallet) =>
         const scanned = state.syncProgress?.synced ?? 0n;
         const total = state.syncProgress?.total.toString() ?? 'unknown number';
         logger.info(
-          `Wallet scanned ${scanned} blocks out of ${total}, transactions=${state.transactionHistory.length}`,
+          `Wallet processed ${scanned} indices out of ${total}, transactions=${state.transactionHistory.length}`,
         );
       }),
       Rx.filter((state) => {

@@ -1,3 +1,4 @@
+# The following images are current to Testnet without SNARK upgradability changes.
 services:
   proof-server:
     container_name: 'counter-proof-server'
@@ -8,7 +9,7 @@ services:
       RUST_BACKTRACE: "full"
   indexer:
     container_name: 'counter-indexer'
-    image: 'midnightnetwork/midnight-pubsub-indexer:2.2.1'
+    image: 'midnightnetwork/midnight-pubsub-indexer:2.2.7'
     platform: linux/amd64
     ports:
       - '0:8088'
@@ -27,7 +28,7 @@ services:
       node:
         condition: service_started
   node:
-    image: 'midnightnetwork/midnight-node:0.6.3-69581601'
+    image: 'midnightnetwork/midnight-node:0.6.6-6288973b'
     platform: linux/amd64
     container_name: 'counter-node'
     ports:

@@ -2,7 +2,16 @@ import type { Config } from '@jest/types';
 
 const config: Config.InitialOptions = {
   preset: 'ts-jest/presets/default-esm',
-  testEnvironment: 'node',
+  testEnvironment: 'allure-jest/node',
+  testEnvironmentOptions: {
+    resultsDir: './reports/allure-results',
+    links: [
+      {
+        "type": "tms",
+        "urlTemplate": "https://input-output.atlassian.net/browse/%s"
+      }
+    ]
+  },
   verbose: true,
   testTimeout: 15 * 60_000,
   roots: ['<rootDir>'],
