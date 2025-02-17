@@ -9,15 +9,7 @@ import './globals';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ThemeProvider } from '@mui/material';
-import {
-  toLedgerNetworkId,
-  toRuntimeNetworkId,
-  toZswapNetworkId,
-  type NetworkId,
-} from '@midnight-ntwrk/midnight-js-network-id';
-import { setNetworkId } from '@midnight-ntwrk/compact-runtime';
-import { setNetworkId as zwapSetNetworkId } from '@midnight-ntwrk/zswap';
-import { setNetworkId as ledgerSetNetworkId } from '@midnight-ntwrk/ledger';
+import { setNetworkId, type NetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import App from './App';
 import CssBaseline from '@mui/material/CssBaseline';
 import { theme } from './config/theme';
@@ -26,11 +18,8 @@ import * as pino from 'pino';
 import { DeployedBoardProvider } from './contexts';
 
 const networkId = import.meta.env.VITE_NETWORK_ID as NetworkId;
-
 // Ensure that the network IDs are set within the Midnight libraries.
-setNetworkId(toRuntimeNetworkId(networkId));
-zwapSetNetworkId(toZswapNetworkId(networkId));
-ledgerSetNetworkId(toLedgerNetworkId(networkId));
+setNetworkId(networkId);
 
 // Create a default `pino` logger and configure it with the configured logging level.
 export const logger = pino.pino({

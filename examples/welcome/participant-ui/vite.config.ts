@@ -7,6 +7,7 @@ export default defineConfig({
   cacheDir: './.vite',
   build: {
     target: 'esnext',
+    minify: false,
   },
   plugins: [react(), viteCommonjs()],
   optimizeDeps: {

@@ -1,8 +1,8 @@
 import { createLogger } from '../logger-utils.js';
 import { run } from '../index.js';
-import { DevnetRemoteConfig } from '../config';
+import { TestnetRemoteConfig } from '../config.js';
 
-const config = new DevnetRemoteConfig();
+const config = new TestnetRemoteConfig();
 config.setNetworkId();
 const logger = await createLogger(config.logDir);
 await run(config, logger);

@@ -26,7 +26,7 @@
 
 4. Download the Compact compiler, create a directory in which to place it, unzip the file in that directory, and export the following environment variable to point to it:
    ```sh
-   export COMPACT_HOME=~/work/midnight/devnet1-compact
+   export COMPACT_HOME=~/work/midnight/testnet-compact
    ```
    Use the your own correct path, of course.
 
@@ -110,14 +110,14 @@ yarn build
 Run the DApp:
 
 ```sh
-yarn devnet-remote
+yarn testnet-remote
 ```
 The preceding entry point assumes you already have a proof server running locally.
 If you want one to be started automatically for you, use instead:
 ```sh
-yarn devnet-remote-ps
+yarn testnet-remote-ps
 ```
 
 Then follow the instructions from the CLI.  On the first run, you will want to create a new wallet and copy its address, so as to transfer funds to it from your Midnight Lace wallet.
 
-You can find much more information in part 2 of the [Midnight developer tutorial](https://devnetdocs.midnight.network/docs/tutorial/building).
+You can find much more information in part 2 of the [Midnight developer tutorial](https://docs.midnight.network/develop/tutorial/building/).

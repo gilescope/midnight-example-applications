@@ -1,11 +1,13 @@
-import { PrivateStateProvider, PrivateStateSchema } from '@midnight-ntwrk/midnight-js-types';
+import { PrivateStateProvider, PrivateStateSchema, type PrivateStateKey } from '@midnight-ntwrk/midnight-js-types';
+import type { ContractAddress } from '@midnight-ntwrk/ledger';
+import type { SigningKey } from '@midnight-ntwrk/compact-runtime';
 import { concatMap, delay, Observable, of, retry, startWith, Subject } from 'rxjs';
 import { Logger } from 'pino';
 
 const notification: unique symbol = Symbol('notification');
 
 export interface SubscribablePrivateStateProvider<PSS extends PrivateStateSchema> extends PrivateStateProvider<PSS> {
-  state$<PSK extends keyof PSS>(key: PSK): Observable<PSS[PSK] | null>;
+  state$<PSK extends PrivateStateKey<PSS>>(key: PSK): Observable<PSS[PSK] | null>;
 }
 
 export class SubscribablePrivateStateProviderDecorator<PSS extends PrivateStateSchema>
@@ -17,7 +19,7 @@ export class SubscribablePrivateStateProviderDecorator<PSS extends PrivateStateS
     private readonly logger: Logger,
     private readonly wrapped: PrivateStateProvider<PSS>,
   ) {}
-  state$<PSK extends keyof PSS>(key: PSK): Observable<PSS[PSK] | null> {
+  state$<PSK extends PrivateStateKey<PSS>>(key: PSK): Observable<PSS[PSK] | null> {
     return this.#internalSubject.asObservable().pipe(
       startWith(notification),
       concatMap(() => this.get(key)),
@@ -39,16 +41,32 @@ export class SubscribablePrivateStateProviderDecorator<PSS extends PrivateStateS
     return this.wrapped.clear().then(this.#notify);
   }
 
-  get<PSK extends keyof PSS>(key: PSK): Promise<PSS[PSK] | null> {
+  get<PSK extends PrivateStateKey<PSS>>(key: PSK): Promise<PSS[PSK] | null> {
     return this.wrapped.get(key);
   }
 
-  remove<PSK extends keyof PSS>(key: PSK): Promise<void> {
+  remove<PSK extends PrivateStateKey<PSS>>(key: PSK): Promise<void> {
     return this.wrapped.remove(key).then(this.#notify);
   }
 
-  set<PSK extends keyof PSS>(key: PSK, state: PSS[PSK]): Promise<void> {
+  set<PSK extends PrivateStateKey<PSS>>(key: PSK, state: PSS[PSK]): Promise<void> {
     return this.wrapped.set(key, state).then(this.#notify);
+  }
+
+  setSigningKey(contractAddress: ContractAddress, signingKey: SigningKey): Promise<void> {
+    return this.wrapped.setSigningKey(contractAddress, signingKey);
+  }
+
+  getSigningKey(contractAddress: ContractAddress): Promise<SigningKey | null> {
+    return this.wrapped.getSigningKey(contractAddress);
+  }
+
+  removeSigningKey(contractAddress: ContractAddress): Promise<void> {
+    return this.wrapped.removeSigningKey(contractAddress);
+  }
+
+  clearSigningKeys(): Promise<void> {
+    return this.wrapped.clearSigningKeys();
   }
 
   #notify = <T>(input: T): T => {

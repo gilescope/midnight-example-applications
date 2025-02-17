@@ -1,15 +1,21 @@
-import { type Config, DevnetRemoteConfig, StandaloneConfig } from '../config';
+import {
+  type Config,
+  StandaloneConfig,
+  TestnetRemoteConfig,
+} from '../config';
 
 export interface TestConfig {
   seed: string;
   entrypoint: string;
   dappConfig: Config;
+  psMode: string;
 }
 
 export class LocalTestConfig implements TestConfig {
   seed = 'hardcoded_in_dApp';
   entrypoint = 'dist/launcher/standalone.js';
   dappConfig = new StandaloneConfig();
+  psMode = 'undeployed';
 }
 
 export function parseArgs(required: string[]): TestConfig {
@@ -31,8 +37,9 @@ export function parseArgs(required: string[]): TestConfig {
     }
   }
 
-  let cfg: Config = new DevnetRemoteConfig();
+  let cfg: Config = new TestnetRemoteConfig();
   let env = '';
+  let psMode = 'undeployed';
   if (required.includes('env')) {
     if (process.env.TEST_ENV !== undefined) {
       env = process.env.TEST_ENV;
@@ -40,8 +47,9 @@ export function parseArgs(required: string[]): TestConfig {
       throw new Error('TEST_ENV environment variable is not defined.');
     }
     switch (env) {
-      case 'devnet':
-        cfg = new DevnetRemoteConfig();
+      case 'testnet':
+        cfg = new TestnetRemoteConfig();
+        psMode = 'testnet';
         break;
       default:
         throw new Error(`Unknown env value=${env}`);
@@ -52,5 +60,6 @@ export function parseArgs(required: string[]): TestConfig {
     seed,
     entrypoint: entry,
     dappConfig: cfg,
+    psMode,
   };
 }

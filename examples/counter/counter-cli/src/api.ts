@@ -1,7 +1,7 @@
-import { type CoinPublicKey, type ContractAddress, encodeCoinPublicKey } from '@midnight-ntwrk/compact-runtime';
+import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
 import { Contract, ledger, witnesses } from '@midnight-ntwrk/counter-contract';
 import { type CoinInfo, nativeToken, Transaction, type TransactionId } from '@midnight-ntwrk/ledger';
-import { deployContract, findDeployedContract, withZswapWitnesses } from '@midnight-ntwrk/midnight-js-contracts';
+import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
@@ -27,8 +27,9 @@ import {
   type PrivateStates,
 } from './common-types.js';
 import { type Config, contractConfig } from './config.js';
-import { toHex } from './conversion-utils.js';
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
+import { toHex } from '@midnight-ntwrk/midnight-js-utils';
+import { getLedgerNetworkId, getZswapNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 let logger: Logger;
 // @ts-expect-error: It's needed to make Scala.js and WASM code able to use cryptography
@@ -45,35 +46,30 @@ export const getCounterLedgerState = (
     .queryContractState(contractAddress)
     .then((contractState) => (contractState != null ? ledger(contractState.data).round : null));
 
-export const createCounterContract = (coinPublicKey: CoinPublicKey): CounterContract =>
-  new Contract(withZswapWitnesses(witnesses)(encodeCoinPublicKey(coinPublicKey)));
+export const counterContractInstance: CounterContract = new Contract(witnesses);
 
 export const joinContract = async (
   providers: CounterProviders,
   contractAddress: string,
 ): Promise<DeployedCounterContract> => {
-  const counterContract = await findDeployedContract(
-    providers,
+  const counterContract = await findDeployedContract(providers, {
     contractAddress,
-    createCounterContract(providers.walletProvider.coinPublicKey),
-    {
-      privateStateKey: 'counterPrivateState',
-      initialPrivateState: {},
-    },
-  );
-  logger.info(`Joined contract at address: ${counterContract.finalizedDeployTxData.contractAddress}`);
+    contract: counterContractInstance,
+    privateStateKey: 'counterPrivateState',
+    initialPrivateState: {},
+  });
+  logger.info(`Joined contract at address: ${counterContract.deployTxData.public.contractAddress}`);
   return counterContract;
 };
 
 export const deploy = async (providers: CounterProviders): Promise<DeployedCounterContract> => {
   logger.info(`Deploying counter contract...`);
-  const counterContract = await deployContract(
-    providers,
-    'counterPrivateState',
-    {},
-    createCounterContract(providers.walletProvider.coinPublicKey),
-  );
-  logger.info(`Deployed contract at address: ${counterContract.finalizedDeployTxData.contractAddress}`);
+  const counterContract = await deployContract(providers, {
+    privateStateKey: 'counterPrivateState',
+    contract: counterContractInstance,
+    initialPrivateState: {},
+  });
+  logger.info(`Deployed contract at address: ${counterContract.deployTxData.public.contractAddress}`);
   return counterContract;
 };
 
@@ -81,7 +77,8 @@ export const increment = async (
   counterContract: DeployedCounterContract,
 ): Promise<{ blockHeight: number; txHash: string }> => {
   logger.info('Incrementing...');
-  const { txHash, blockHeight } = await counterContract.contractCircuitsInterface.increment();
+  const tx = await counterContract.callTx.increment();
+  const { txHash, blockHeight } = tx.public;
   logger.info(`Transaction ${txHash} added in block ${blockHeight}`);
   return { txHash, blockHeight };
 };
@@ -90,7 +87,7 @@ export const displayCounterValue = async (
   providers: CounterProviders,
   counterContract: DeployedCounterContract,
 ): Promise<{ counterValue: bigint | null; contractAddress: string }> => {
-  const contractAddress = counterContract.finalizedDeployTxData.contractAddress;
+  const contractAddress = counterContract.deployTxData.public.contractAddress;
   const counterValue = await getCounterLedgerState(providers, contractAddress);
   if (counterValue === null) {
     logger.info(`There is no counter contract deployed at ${contractAddress}.`);
@@ -106,13 +103,16 @@ export const createWalletAndMidnightProvider = async (wallet: Wallet): Promise<W
     coinPublicKey: state.coinPublicKey,
     balanceTx(tx: UnbalancedTransaction, newCoins: CoinInfo[]): Promise<BalancedTransaction> {
       return wallet
-        .balanceTransaction(ZswapTransaction.deserialize(tx.tx.serialize()), newCoins)
+        .balanceTransaction(
+          ZswapTransaction.deserialize(tx.serialize(getLedgerNetworkId()), getZswapNetworkId()),
+          newCoins,
+        )
         .then((tx) => wallet.proveTransaction(tx))
-        .then((zswapTx) => Transaction.deserialize(zswapTx.serialize()))
+        .then((zswapTx) => Transaction.deserialize(zswapTx.serialize(getZswapNetworkId()), getLedgerNetworkId()))
         .then(createBalancedTx);
     },
     submitTx(tx: BalancedTransaction): Promise<TransactionId> {
-      return wallet.submitTransaction(tx.tx);
+      return wallet.submitTransaction(tx);
     },
   };
 };
@@ -143,7 +143,15 @@ export const buildWalletAndWaitForFunds = async (
   { indexer, indexerWS, node, proofServer }: Config,
   seed: string,
 ): Promise<Wallet & Resource> => {
-  const wallet = await WalletBuilder.buildFromSeed(indexer, indexerWS, proofServer, node, seed, 'warn');
+  const wallet = await WalletBuilder.buildFromSeed(
+    indexer,
+    indexerWS,
+    proofServer,
+    node,
+    seed,
+    getZswapNetworkId(),
+    'warn',
+  );
   wallet.start();
   const state = await Rx.firstValueFrom(wallet.state());
   logger.info(`Your wallet seed is: ${seed}`);

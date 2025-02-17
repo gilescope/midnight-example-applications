@@ -9,7 +9,7 @@
     "start": "http-server --port 0 ./dist",
     "dev": "vite",
     "prepack": "yarn build",
-    "build": "tsc && vite build --mode devnet && cp -r ../contract/dist/managed/welcome/keys ./dist/keys && cp -r ../contract/dist/managed/welcome/zkir ./dist/zkir",
+    "build": "tsc && vite build --mode testnet && cp -r ../contract/dist/managed/welcome/keys ./dist/keys && cp -r ../contract/dist/managed/welcome/zkir ./dist/zkir",
     "preview": "vite preview",
     "lint": "eslint ./src",
     "test": "jest --passWithNoTests"

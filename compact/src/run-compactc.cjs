@@ -16,7 +16,7 @@ if (COMPACT_HOME_ENV != null) {
 }
 
 // yarn runs everything with node...
-const child = childProcess.spawn(path.resolve(compactPath, 'run-compactc.sh'), args, {
+const child = childProcess.spawn(path.resolve(compactPath, 'compactc'), args, {
   stdio: 'inherit'
 });
 child.on('exit', (code, signal) => {

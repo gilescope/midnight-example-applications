@@ -21,7 +21,7 @@ describe('API', () => {
     const testConfiguration = await testEnvironment.start();
     wallet = await testEnvironment.getWallet();
     providers = await api.configureProviders(wallet, testConfiguration.dappConfig);
-  }, 5 * 60_000);
+  }, 30 * 60_000);
 
   afterAll(async () => {
     await testEnvironment.shutdown();

@@ -6,9 +6,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "devnet-remote": "node --experimental-specifier-resolution=node dist/devnet-remote.js",
-    "devnet-remote-ps": "node --experimental-specifier-resolution=node dist/devnet-remote-start-proof-server.js",
-    "devnet-local": "node --experimental-specifier-resolution=node dist/devnet-local.js",
+    "testnet-remote": "node --experimental-specifier-resolution=node dist/testnet-remote.js",
+    "testnet-remote-ps": "node --experimental-specifier-resolution=node dist/testnet-remote-start-proof-server.js",
+    "testnet-local": "node --experimental-specifier-resolution=node dist/testnet-local.js",
     "standalone": "docker compose -f standalone.yml pull && node --experimental-specifier-resolution=node dist/standalone.js",
     "prepack": "yarn build",
     "test": "yarn test-api",

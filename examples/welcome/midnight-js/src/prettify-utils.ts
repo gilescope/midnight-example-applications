@@ -1,6 +1,6 @@
 import { ActionHistory, OrganizerWelcomeState, ParticipantWelcomeState } from '@midnight-ntwrk/welcome-api';
-import { toHex } from './conversion-utils';
 import { Ledger } from '@midnight-ntwrk/welcome-contract';
+import { toHex } from '@midnight-ntwrk/midnight-js-utils';
 
 export const prettifyActions = ({ latest, all }: ActionHistory): object => ({
   latest,

@@ -32,7 +32,9 @@ import {
   createBalancedTx,
 } from '@midnight-ntwrk/midnight-js-types';
 import { type CoinInfo, Transaction, type TransactionId } from '@midnight-ntwrk/ledger';
+import { Transaction as ZswapTransaction } from '@midnight-ntwrk/zswap';
 import semver from 'semver';
+import { getLedgerNetworkId, getZswapNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 /**
  * An in-progress bulletin board deployment.
@@ -210,16 +212,20 @@ const initializeProviders = async (logger: Logger): Promise<BBoardProviders> => 
     publicDataProvider: indexerPublicDataProvider(uris.indexerUri, uris.indexerWsUri),
     walletProvider: {
       coinPublicKey: walletState.coinPublicKey,
-      async balanceTx(tx: UnbalancedTransaction, newCoins: CoinInfo[]): Promise<BalancedTransaction> {
-        const balanceTx = await wallet.balanceTransaction(tx.tx, newCoins);
-        const proveTx = await wallet.proveTransaction(balanceTx);
-
-        return createBalancedTx(Transaction.deserialize(proveTx.serialize()));
+      balanceTx(tx: UnbalancedTransaction, newCoins: CoinInfo[]): Promise<BalancedTransaction> {
+        return wallet
+          .balanceTransaction(
+            ZswapTransaction.deserialize(tx.serialize(getLedgerNetworkId()), getZswapNetworkId()),
+            newCoins,
+          )
+          .then((tx) => wallet.proveTransaction(tx))
+          .then((zswapTx) => Transaction.deserialize(zswapTx.serialize(getZswapNetworkId()), getLedgerNetworkId()))
+          .then(createBalancedTx);
       },
     },
     midnightProvider: {
       submitTx(tx: BalancedTransaction): Promise<TransactionId> {
-        return wallet.submitTransaction(tx.tx);
+        return wallet.submitTransaction(tx);
       },
     },
   };

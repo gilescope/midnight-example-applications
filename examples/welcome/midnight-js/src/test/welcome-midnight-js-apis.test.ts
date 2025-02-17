@@ -17,7 +17,7 @@ import {
   ParticipantWelcomeState,
 } from '@midnight-ntwrk/welcome-api';
 import { WebSocket } from 'ws';
-import { networkId, setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
+import { NetworkId, setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { withNewEphemeralStateProvider, withNewProviders } from './initialize-providers';
 import type { TestLedger, TestOrganizerWelcomeState, TestParticipantWelcomeState } from './test-states';
 import {
@@ -30,11 +30,11 @@ import {
   testParticipantWelcomeStatesEqual,
 } from './test-states';
 import { ledger, Ledger } from '@midnight-ntwrk/welcome-contract';
-import { toHex } from '../conversion-utils';
 import { ContractStateObservableConfig } from '@midnight-ntwrk/midnight-js-types';
 import { ContractAddress } from '@midnight-ntwrk/compact-runtime';
 import { randomInt } from 'crypto';
 import { TransactionId } from '@midnight-ntwrk/ledger';
+import { toHex } from '@midnight-ntwrk/midnight-js-utils';
 
 // @ts-ignore: It's needed to make Scala.js and WASM code able to use cryptography
 globalThis.crypto = webcrypto;
@@ -42,7 +42,7 @@ globalThis.crypto = webcrypto;
 // @ts-ignore: It's needed to enable WebSocket usage through apollo
 globalThis.WebSocket = WebSocket;
 
-setNetworkId(networkId.undeployed);
+setNetworkId(NetworkId.Undeployed);
 
 //Yes, with proving, consensus, etc. longer scenarios take a lot of time
 jest.setTimeout(600_000);
@@ -137,8 +137,11 @@ export const runWelcomeTests = (logger: Logger, providersResource: Resource<[Wel
     test("'watchForDeployTxData' should work for deploy tx submission", async () => {
       const api = await OrganizerWelcomeMidnightJSAPI.deploy(providers, appProviders, ['jim']);
       const actual = await providers.publicDataProvider.watchForDeployTxData(api.contractAddress);
-      const expected = api.finalizedDeployTxData;
-      return expect(actual).toEqual(expected);
+      const expected = {
+        ...api.finalizedDeployTxData,
+        tx: expect.anything(), // Ignore the newly added `tx` property for the moment
+      };
+      return expect(actual).toMatchObject(expected);
     });
 
     test("'watchForTxData' should work for call tx submission", async () => {

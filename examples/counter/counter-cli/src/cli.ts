@@ -125,8 +125,8 @@ export const run = async (config: Config, _logger: Logger, dockerEnv?: DockerCom
     env = await dockerEnv.up();
 
     if (config instanceof StandaloneConfig) {
-      config.indexer = mapContainerPort(env, config.indexer, 'counter-graphql-api');
-      config.indexerWS = mapContainerPort(env, config.indexerWS, 'counter-graphql-api');
+      config.indexer = mapContainerPort(env, config.indexer, 'counter-indexer');
+      config.indexerWS = mapContainerPort(env, config.indexerWS, 'counter-indexer');
       config.node = mapContainerPort(env, config.node, 'counter-node');
       config.proofServer = mapContainerPort(env, config.proofServer, 'counter-proof-server');
     }
@@ -141,6 +141,7 @@ export const run = async (config: Config, _logger: Logger, dockerEnv?: DockerCom
     if (e instanceof Error) {
       logger.error(`Found error '${e.message}'`);
       logger.info('Exiting...');
+      logger.debug(`${e.stack}`);
     } else {
       throw e;
     }

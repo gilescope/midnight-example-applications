@@ -5,7 +5,6 @@ import {
   OrganizerWelcomeMidnightJSAPI,
   EphemeralStateBloc,
   SubscribablePrivateStateProviderDecorator,
-  fromHex,
   unsafeCryptography,
 } from '@midnight-ntwrk/welcome-midnight-js';
 import type { DAppConnectorAPI, DAppConnectorWalletAPI, ServiceUriConfig } from '@midnight-ntwrk/dapp-connector-api';
@@ -27,6 +26,8 @@ import { type CoinInfo, Transaction, type TransactionId } from '@midnight-ntwrk/
 import { concatMap, filter, firstValueFrom, interval, map, of, take, tap, throwError, timeout } from 'rxjs';
 import semver from 'semver';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { fromHex } from '@midnight-ntwrk/midnight-js-utils';
+import { getLedgerNetworkId, getZswapNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 type DispatchActionType =
   | { type: typeof Actions.addParticipant; payload: string }
@@ -70,14 +71,15 @@ const initializeAPIEntrypoint = (
             coinPublicKey: walletState.coinPublicKey,
             balanceTx(tx: UnbalancedTransaction, newCoins: CoinInfo[]): Promise<BalancedTransaction> {
               return wallet
-                .balanceTransaction(tx.tx, newCoins)
-                .then((tx) => wallet.proveTransaction(tx))
-                .then((tx) => createBalancedTx(Transaction.deserialize(tx.serialize())));
+                .balanceAndProveTransaction(tx, newCoins)
+                .then((tx) =>
+                  createBalancedTx(Transaction.deserialize(tx.serialize(getZswapNetworkId()), getLedgerNetworkId())),
+                );
             },
           },
           midnightProvider: {
             submitTx(tx: BalancedTransaction): Promise<TransactionId> {
-              return wallet.submitTransaction(tx.tx);
+              return wallet.submitTransaction(tx);
             },
           },
         },

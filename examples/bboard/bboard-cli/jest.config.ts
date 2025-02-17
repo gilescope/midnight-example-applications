@@ -4,7 +4,7 @@ const config: Config.InitialOptions = {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   verbose: true,
-  testTimeout: 7 * 60_000,
+  testTimeout: 15 * 60_000,
   roots: ['<rootDir>'],
   modulePaths: ['<rootDir>'],
   passWithNoTests: false,

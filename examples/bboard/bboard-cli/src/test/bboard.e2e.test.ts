@@ -117,8 +117,8 @@ describe('E2E BBoard CLI', () => {
 
     let progressCondition: ((input: string) => boolean) | undefined;
 
-    cliProcess = spawn('npx', ['ts-node', '--esm', '--experimental-specifier-resolution=node', testConfig.entrypoint], {
-      cwd: DIR_NAME,
+    cliProcess = spawn('node', ['--experimental-specifier-resolution=node', '--no-warnings', testConfig.entrypoint], {
+      cwd: path.resolve(DIR_NAME, '..', '..'),
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 

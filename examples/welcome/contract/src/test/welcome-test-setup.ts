@@ -6,7 +6,13 @@ import {
   witnesses,
 } from '../witnesses.js';
 import * as crypto from 'node:crypto';
-import { CircuitContext, CircuitResults, QueryContext, sampleContractAddress } from '@midnight-ntwrk/compact-runtime';
+import {
+  CircuitContext,
+  CircuitResults,
+  constructorContext,
+  QueryContext,
+  sampleContractAddress,
+} from '@midnight-ntwrk/compact-runtime';
 
 type WelcomeContract = Contract<WelcomePrivateState, Witnesses<WelcomePrivateState>>;
 
@@ -38,15 +44,16 @@ export class WelcomeSimulator {
         value: p,
       }))
       .concat(emptyMaybeVector);
-    const [initialPrivateState, initialContractState] = this.contract.initialState(
-      deployerInitialPrivateState,
+    const { currentPrivateState, currentContractState, currentZswapLocalState } = this.contract.initialState(
+      constructorContext(deployerInitialPrivateState, '0'.repeat(64)),
       participantMaybeVector,
     );
-    this.userPrivateStates = { [deployerName]: initialPrivateState };
+    this.userPrivateStates = { [deployerName]: currentPrivateState };
     this.circuitContext = {
-      currentPrivateState: initialPrivateState,
-      originalState: initialContractState,
-      transactionContext: new QueryContext(initialContractState.data, sampleContractAddress()),
+      currentPrivateState,
+      currentZswapLocalState,
+      originalState: currentContractState,
+      transactionContext: new QueryContext(currentContractState.data, sampleContractAddress()),
     };
     this.turnContext = { ...this.circuitContext };
     this.updateUserPrivateState = (newPrivateState: WelcomePrivateState) => {

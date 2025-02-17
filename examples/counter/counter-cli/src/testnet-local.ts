@@ -1,7 +1,7 @@
 import { createLogger } from './logger-utils.js';
 import { run } from './cli.js';
-import { DevnetLocalConfig } from './config';
+import { TestnetLocalConfig } from './config.js';
 
-const config = new DevnetLocalConfig();
+const config = new TestnetLocalConfig();
 const logger = await createLogger(config.logDir);
 await run(config, logger);

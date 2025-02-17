@@ -1,4 +1,9 @@
-import { type Config, DevnetRemoteConfig, StandaloneConfig, currentDir } from './config';
+import {
+  type Config,
+  StandaloneConfig,
+  TestnetRemoteConfig,
+  currentDir,
+} from './config';
 import {
   DockerComposeEnvironment,
   GenericContainer,
@@ -25,6 +30,7 @@ import type { PrivateStates } from '../common-types';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
+import { getLedgerNetworkId, getZswapNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 const GENESIS_MINT_WALLET_SEED = '0000000000000000000000000000000000000000000000000000000000000042';
 
@@ -32,12 +38,14 @@ export interface TestConfiguration {
   seed: string;
   entrypoint: string;
   dappConfig: Config;
+  psMode: string;
 }
 
 export class LocalTestConfig implements TestConfiguration {
   seed = GENESIS_MINT_WALLET_SEED;
   entrypoint = 'dist/standalone.js';
   dappConfig = new StandaloneConfig();
+  psMode = 'undeployed';
 }
 
 export function parseArgs(required: string[]): TestConfiguration {
@@ -59,8 +67,9 @@ export function parseArgs(required: string[]): TestConfiguration {
     }
   }
 
-  let cfg: Config = new DevnetRemoteConfig();
+  let cfg: Config = new TestnetRemoteConfig();
   let env = '';
+  let psMode = 'undeployed';
   if (required.includes('env')) {
     if (process.env.TEST_ENV !== undefined) {
       env = process.env.TEST_ENV;
@@ -68,8 +77,9 @@ export function parseArgs(required: string[]): TestConfiguration {
       throw new Error('TEST_ENV environment variable is not defined.');
     }
     switch (env) {
-      case 'devnet':
-        cfg = new DevnetRemoteConfig();
+      case 'testnet':
+        cfg = new TestnetRemoteConfig();
+        psMode = 'testnet';
         break;
       default:
         throw new Error(`Unknown env value=${env}`);
@@ -80,6 +90,7 @@ export function parseArgs(required: string[]): TestConfiguration {
     seed,
     entrypoint: entry,
     dappConfig: cfg,
+    psMode,
   };
 }
 
@@ -101,7 +112,7 @@ export class TestEnvironment {
       this.testConfig = parseArgs(['seed', 'env']);
       this.logger.info(`Test wallet seed: ${this.testConfig.seed}`);
       this.logger.info('Proof server starting...');
-      this.container = await TestEnvironment.getProofServerContainer();
+      this.container = await TestEnvironment.getProofServerContainer(this.testConfig.psMode);
       this.testConfig.dappConfig = {
         ...this.testConfig.dappConfig,
         proofServer: `http://${this.container.getHost()}:${this.container.getFirstMappedPort()}`,
@@ -113,26 +124,26 @@ export class TestEnvironment {
       this.logger.info(`Using compose file: ${composeFile}`);
       this.dockerEnv = new DockerComposeEnvironment(path.resolve(currentDir, '..', '..'), composeFile)
         .withWaitStrategy(
-          'bboard-proof-server',
+          'bboard-api-proof-server',
           Wait.forLogMessage('Actix runtime found; starting in Actix runtime', 1),
         )
-        .withWaitStrategy('bboard-graphql-api', Wait.forLogMessage(/Transactions subscription started/, 1))
-        .withWaitStrategy('bboard-node', Wait.forLogMessage(/Accepting new connection [\d]\/[\d]/, 1));
+        .withWaitStrategy('bboard-api-indexer', Wait.forLogMessage(/Transactions subscription started/, 1))
+        .withWaitStrategy('bboard-api-node', Wait.forLogMessage(/Running JSON-RPC server/, 1));
       this.env = await this.dockerEnv.up();
 
       this.testConfig.dappConfig = {
         ...this.testConfig.dappConfig,
-        indexer: TestEnvironment.mapContainerPort(this.env, this.testConfig.dappConfig.indexer, 'bboard-graphql-api'),
+        indexer: TestEnvironment.mapContainerPort(this.env, this.testConfig.dappConfig.indexer, 'bboard-api-indexer'),
         indexerWS: TestEnvironment.mapContainerPort(
           this.env,
           this.testConfig.dappConfig.indexerWS,
-          'bboard-graphql-api',
+          'bboard-api-indexer',
         ),
-        node: TestEnvironment.mapContainerPort(this.env, this.testConfig.dappConfig.node, 'bboard-node'),
+        node: TestEnvironment.mapContainerPort(this.env, this.testConfig.dappConfig.node, 'bboard-api-node'),
         proofServer: TestEnvironment.mapContainerPort(
           this.env,
           this.testConfig.dappConfig.proofServer,
-          'bboard-proof-server',
+          'bboard-api-proof-server',
         ),
       };
     }
@@ -150,10 +161,10 @@ export class TestEnvironment {
     return mappedUrl.toString().replace(/\/+$/, '');
   };
 
-  static getProofServerContainer = async () =>
-    await new GenericContainer('ghcr.io/midnight-ntwrk/proof-server:2.0.7')
+  static getProofServerContainer = async (env: string = 'undeployed') =>
+    await new GenericContainer('ghcr.io/midnight-ntwrk/proof-server:3.0.2')
       .withExposedPorts(6300)
-      .withCommand(['midnight-proof-server --network devnet'])
+      .withCommand([`midnight-proof-server --network ${env}`])
       .withEnvironment({ RUST_BACKTRACE: 'full' })
       .withWaitStrategy(Wait.forLogMessage('Actix runtime found; starting in Actix runtime', 1))
       .start();
@@ -221,7 +232,15 @@ export class TestWallet {
     { indexer, indexerWS, node, proofServer }: Config,
     seed: string,
   ): Promise<Wallet & Resource> => {
-    const wallet = await WalletBuilder.buildFromSeed(indexer, indexerWS, proofServer, node, seed, 'warn');
+    const wallet = await WalletBuilder.buildFromSeed(
+      indexer,
+      indexerWS,
+      proofServer,
+      node,
+      seed,
+      getZswapNetworkId(),
+      'warn',
+    );
     wallet.start();
     const state = await Rx.firstValueFrom(wallet.state());
     this.logger.info(`Your wallet seed is: ${seed}`);
@@ -250,13 +269,16 @@ export class TestProviders {
       coinPublicKey: state.coinPublicKey,
       balanceTx(tx: UnbalancedTransaction, newCoins: CoinInfo[]): Promise<BalancedTransaction> {
         return wallet
-          .balanceTransaction(ZswapTransaction.deserialize(tx.tx.serialize()), newCoins)
+          .balanceTransaction(
+            ZswapTransaction.deserialize(tx.serialize(getLedgerNetworkId()), getZswapNetworkId()),
+            newCoins,
+          )
           .then((tx) => wallet.proveTransaction(tx))
-          .then((zswapTx) => Transaction.deserialize(zswapTx.serialize()))
+          .then((zswapTx) => Transaction.deserialize(zswapTx.serialize(getZswapNetworkId()), getLedgerNetworkId()))
           .then(createBalancedTx);
       },
       submitTx(tx: BalancedTransaction): Promise<TransactionId> {
-        return wallet.submitTransaction(tx.tx);
+        return wallet.submitTransaction(tx);
       },
     };
   };

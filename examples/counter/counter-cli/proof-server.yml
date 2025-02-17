@@ -1,7 +1,7 @@
 services:
   proof-server:
-    image: "midnightnetwork/proof-server:2.0.7"
-    command: ["midnight-proof-server --network devnet"]
+    image: "midnightnetwork/proof-server:3.0.2"
+    command: ["midnight-proof-server --network undeployed"]
     ports:
       - "6300:6300"
     environment:

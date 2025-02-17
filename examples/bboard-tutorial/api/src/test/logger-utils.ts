@@ -10,14 +10,17 @@ export const createLogger = async (logPath: string): Promise<pino.Logger> => {
     colorize: true,
     sync: true,
   });
-  const level = 'info' as const;
+  const level =
+    process.env.DEBUG_LEVEL !== undefined && process.env.DEBUG_LEVEL !== null && process.env.DEBUG_LEVEL !== ''
+      ? process.env.DEBUG_LEVEL
+      : 'info';
   return pino(
     {
       level,
       depthLimit: 20,
     },
     pino.multistream([
-      { stream: pretty, level: 'info' },
+      { stream: pretty, level },
       { stream: createWriteStream(logPath), level },
     ]),
   );

@@ -1,4 +1,9 @@
-import { type Config, DevnetRemoteConfig, StandaloneConfig, currentDir } from '../config';
+import {
+  type Config,
+  StandaloneConfig,
+  currentDir,
+  TestnetRemoteConfig,
+} from '../config';
 import {
   DockerComposeEnvironment,
   GenericContainer,
@@ -20,11 +25,13 @@ export interface TestConfiguration {
   seed: string;
   entrypoint: string;
   dappConfig: Config;
+  psMode: string;
 }
 
 export class LocalTestConfig implements TestConfiguration {
   seed = GENESIS_MINT_WALLET_SEED;
   entrypoint = 'dist/standalone.js';
+  psMode = 'undeployed';
   dappConfig = new StandaloneConfig();
 }
 
@@ -47,8 +54,9 @@ export function parseArgs(required: string[]): TestConfiguration {
     }
   }
 
-  let cfg: Config = new DevnetRemoteConfig();
+  let cfg: Config = new TestnetRemoteConfig();
   let env = '';
+  let psMode = 'undeployed';
   if (required.includes('env')) {
     if (process.env.TEST_ENV !== undefined) {
       env = process.env.TEST_ENV;
@@ -56,8 +64,9 @@ export function parseArgs(required: string[]): TestConfiguration {
       throw new Error('TEST_ENV environment variable is not defined.');
     }
     switch (env) {
-      case 'devnet':
-        cfg = new DevnetRemoteConfig();
+      case 'testnet':
+        cfg = new TestnetRemoteConfig();
+        psMode = 'testnet';
         break;
       default:
         throw new Error(`Unknown env value=${env}`);
@@ -68,6 +77,7 @@ export function parseArgs(required: string[]): TestConfiguration {
     seed,
     entrypoint: entry,
     dappConfig: cfg,
+    psMode,
   };
 }
 
@@ -89,7 +99,7 @@ export class TestEnvironment {
       this.testConfig = parseArgs(['seed', 'env']);
       this.logger.info(`Test wallet seed: ${this.testConfig.seed}`);
       this.logger.info('Proof server starting...');
-      this.container = await TestEnvironment.getProofServerContainer();
+      this.container = await TestEnvironment.getProofServerContainer(this.testConfig.psMode);
       this.testConfig.dappConfig = {
         ...this.testConfig.dappConfig,
         proofServer: `http://${this.container.getHost()}:${this.container.getMappedPort(6300).toString()}`,
@@ -104,17 +114,13 @@ export class TestEnvironment {
           'counter-proof-server',
           Wait.forLogMessage('Actix runtime found; starting in Actix runtime', 1),
         )
-        .withWaitStrategy('counter-graphql-api', Wait.forLogMessage(/Transactions subscription started/, 1));
+        .withWaitStrategy('counter-indexer', Wait.forLogMessage(/Transactions subscription started/, 1));
       this.env = await this.dockerEnv.up();
 
       this.testConfig.dappConfig = {
         ...this.testConfig.dappConfig,
-        indexer: TestEnvironment.mapContainerPort(this.env, this.testConfig.dappConfig.indexer, 'counter-graphql-api'),
-        indexerWS: TestEnvironment.mapContainerPort(
-          this.env,
-          this.testConfig.dappConfig.indexerWS,
-          'counter-graphql-api',
-        ),
+        indexer: TestEnvironment.mapContainerPort(this.env, this.testConfig.dappConfig.indexer, 'counter-indexer'),
+        indexerWS: TestEnvironment.mapContainerPort(this.env, this.testConfig.dappConfig.indexerWS, 'counter-indexer'),
         node: TestEnvironment.mapContainerPort(this.env, this.testConfig.dappConfig.node, 'counter-node'),
         proofServer: TestEnvironment.mapContainerPort(
           this.env,
@@ -137,10 +143,10 @@ export class TestEnvironment {
     return mappedUrl.toString().replace(/\/+$/, '');
   };
 
-  static getProofServerContainer = async () =>
-    await new GenericContainer('ghcr.io/midnight-ntwrk/proof-server:2.0.7')
+  static getProofServerContainer = async (env: string) =>
+    await new GenericContainer('ghcr.io/midnight-ntwrk/proof-server:3.0.2')
       .withExposedPorts(6300)
-      .withCommand(['midnight-proof-server --network devnet'])
+      .withCommand([`midnight-proof-server --network ${env}`])
       .withEnvironment({ RUST_BACKTRACE: 'full' })
       .withWaitStrategy(Wait.forLogMessage('Actix runtime found; starting in Actix runtime', 1))
       .start();

@@ -1,7 +1,7 @@
 import { WelcomePrivateState, Ledger, pureCircuits } from '@midnight-ntwrk/welcome-contract';
 import { OrganizerWelcomeState, Roles } from '@midnight-ntwrk/welcome-api';
 import { EphemeralState } from './ephemeral-state-bloc.js';
-import { toHex } from './conversion-utils.js';
+import { toHex } from '@midnight-ntwrk/midnight-js-utils';
 
 export const deriveOrganizerWelcomeState = (
   { organizerPks }: Ledger,

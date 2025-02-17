@@ -1,4 +1,5 @@
 import { CoinInfo, Transaction, TransactionId } from '@midnight-ntwrk/ledger';
+import { getLedgerNetworkId, getZswapNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import {
   BalancedTransaction,
   createBalancedTx,
@@ -24,13 +25,13 @@ export const headlessWalletAndMidnightProvider = async (wallet: Wallet): Promise
     coinPublicKey: state.coinPublicKey,
     balanceTx(tx: UnbalancedTransaction, newCoins: CoinInfo[]): Promise<BalancedTransaction> {
       return wallet
-        .balanceTransaction(ZswapTransaction.deserialize(tx.tx.serialize()), newCoins)
+        .balanceTransaction(ZswapTransaction.deserialize(tx.serialize(getLedgerNetworkId()), getZswapNetworkId()), newCoins)
         .then((tx) => wallet.proveTransaction(tx))
-        .then((zswapTx) => Transaction.deserialize(zswapTx.serialize()))
+        .then((zswapTx) => Transaction.deserialize(zswapTx.serialize(getZswapNetworkId()), getLedgerNetworkId()))
         .then(createBalancedTx);
     },
     submitTx(tx: BalancedTransaction): Promise<TransactionId> {
-      return wallet.submitTransaction(tx.tx);
+      return wallet.submitTransaction(tx);
     },
   };
 };

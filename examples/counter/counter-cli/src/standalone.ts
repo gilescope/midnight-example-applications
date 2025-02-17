@@ -7,6 +7,6 @@ import { currentDir, StandaloneConfig } from './config';
 const config = new StandaloneConfig();
 const dockerEnv = new DockerComposeEnvironment(path.resolve(currentDir, '..'), 'standalone.yml')
   .withWaitStrategy('counter-proof-server', Wait.forLogMessage('Actix runtime found; starting in Actix runtime', 1))
-  .withWaitStrategy('counter-graphql-api', Wait.forLogMessage(/Transactions subscription started/, 1));
+  .withWaitStrategy('counter-indexer', Wait.forLogMessage(/Transactions subscription started/, 1));
 const logger = await createLogger(config.logDir);
 await run(config, logger, dockerEnv);

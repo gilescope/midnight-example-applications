@@ -1,7 +1,7 @@
 /*
  * This file is the main driver for the Midnight bulletin board example.
  * The entry point is the run function, at the end of the file.
- * We expect the startup files (devnet-remote.ts, standalone.ts, etc.) to
+ * We expect the startup files (testnet-remote.ts, standalone.ts, etc.) to
  * call run with some specific configuration that sets the network addresses
  * of the servers this file relies on.
  */
@@ -39,6 +39,8 @@ import { type Config, StandaloneConfig } from './config.js';
 import type { StartedDockerComposeEnvironment, DockerComposeEnvironment } from 'testcontainers';
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
 import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
+import { toHex } from '@midnight-ntwrk/midnight-js-utils';
+import { getLedgerNetworkId, getZswapNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 // @ts-expect-error: It's needed to make Scala.js and WASM code able to use cryptography
 globalThis.crypto = webcrypto;
@@ -109,7 +111,7 @@ const displayLedgerState = async (
   deployedBBoardContract: DeployedBBoardContract,
   logger: Logger,
 ): Promise<void> => {
-  const contractAddress = deployedBBoardContract.finalizedDeployTxData.contractAddress;
+  const contractAddress = deployedBBoardContract.deployTxData.public.contractAddress;
   const ledgerState = await getBBoardLedgerState(providers, contractAddress);
   if (ledgerState === null) {
     logger.info(`There is no bulletin board contract deployed at ${contractAddress}`);
@@ -119,7 +121,7 @@ const displayLedgerState = async (
     logger.info(`Current state is: '${boardState}'`);
     logger.info(`Current message is: '${latestMessage}'`);
     logger.info(`Current instance is: ${ledgerState.instance}`);
-    logger.info(`Current poster is: '${utils.toHex(ledgerState.poster)}'`);
+    logger.info(`Current poster is: '${toHex(ledgerState.poster)}'`);
   }
 };
 
@@ -132,7 +134,7 @@ const displayPrivateState = async (providers: BBoardProviders, logger: Logger): 
   if (privateState === null) {
     logger.info(`There is no existing bulletin board private state`);
   } else {
-    logger.info(`Current secret key is: ${utils.toHex(privateState.secretKey)}`);
+    logger.info(`Current secret key is: ${toHex(privateState.secretKey)}`);
   }
 };
 
@@ -229,13 +231,16 @@ const createWalletAndMidnightProvider = async (wallet: Wallet): Promise<WalletPr
     coinPublicKey: state.coinPublicKey,
     balanceTx(tx: UnbalancedTransaction, newCoins: CoinInfo[]): Promise<BalancedTransaction> {
       return wallet
-        .balanceTransaction(ZswapTransaction.deserialize(tx.tx.serialize()), newCoins)
+        .balanceTransaction(
+          ZswapTransaction.deserialize(tx.serialize(getLedgerNetworkId()), getZswapNetworkId()),
+          newCoins,
+        )
         .then((tx) => wallet.proveTransaction(tx))
-        .then((zswapTx) => Transaction.deserialize(zswapTx.serialize()))
+        .then((zswapTx) => Transaction.deserialize(zswapTx.serialize(getZswapNetworkId()), getLedgerNetworkId()))
         .then(createBalancedTx);
     },
     submitTx(tx: BalancedTransaction): Promise<TransactionId> {
-      return wallet.submitTransaction(tx.tx);
+      return wallet.submitTransaction(tx);
     },
   };
 };
@@ -281,7 +286,15 @@ const buildWalletAndWaitForFunds = async (
   logger: Logger,
   seed: string,
 ): Promise<Wallet & Resource> => {
-  const wallet = await WalletBuilder.buildFromSeed(indexer, indexerWS, proofServer, node, seed, 'warn');
+  const wallet = await WalletBuilder.buildFromSeed(
+    indexer,
+    indexerWS,
+    proofServer,
+    node,
+    seed,
+    getZswapNetworkId(),
+    'warn',
+  );
   wallet.start();
   const state = await Rx.firstValueFrom(wallet.state());
   logger.info(`Your wallet seed is: ${seed}`);
@@ -298,7 +311,7 @@ const buildWalletAndWaitForFunds = async (
 
 // Generate a random see and create the wallet with that.
 const buildFreshWallet = async (config: Config, logger: Logger): Promise<Wallet & Resource> =>
-  await buildWalletAndWaitForFunds(config, logger, utils.toHex(utils.randomBytes(32)));
+  await buildWalletAndWaitForFunds(config, logger, toHex(utils.randomBytes(32)));
 
 // Prompt for a seed and create the wallet with that.
 const buildWalletFromSeed = async (config: Config, rli: Interface, logger: Logger): Promise<Wallet & Resource> => {
@@ -368,8 +381,8 @@ export const run = async (config: Config, logger: Logger, dockerEnv?: DockerComp
     env = await dockerEnv.up();
 
     if (config instanceof StandaloneConfig) {
-      config.indexer = mapContainerPort(env, config.indexer, 'bboard-graphql-api');
-      config.indexerWS = mapContainerPort(env, config.indexerWS, 'bboard-graphql-api');
+      config.indexer = mapContainerPort(env, config.indexer, 'bboard-indexer');
+      config.indexerWS = mapContainerPort(env, config.indexerWS, 'bboard-indexer');
       config.node = mapContainerPort(env, config.node, 'bboard-node');
       config.proofServer = mapContainerPort(env, config.proofServer, 'bboard-proof-server');
     }
@@ -394,6 +407,7 @@ export const run = async (config: Config, logger: Logger, dockerEnv?: DockerComp
     if (e instanceof Error) {
       logger.error(`Found error '${e.message}'`);
       logger.info('Exiting...');
+      logger.debug(`${e.stack}`);
     } else {
       throw e;
     }
@@ -413,6 +427,7 @@ export const run = async (config: Config, logger: Logger, dockerEnv?: DockerComp
           if (env !== undefined) {
             await env.down();
             logger.info('Goodbye');
+            process.exit(0);
           }
         } catch (e) {}
       }

@@ -4,12 +4,7 @@
  * @packageDocumentation
  */
 
-import {
-  type CoinPublicKey,
-  type ContractAddress,
-  encodeCoinPublicKey,
-  convert_bigint_to_Uint8Array,
-} from '@midnight-ntwrk/compact-runtime';
+import { type ContractAddress, convert_bigint_to_Uint8Array } from '@midnight-ntwrk/compact-runtime';
 import { type Logger } from 'pino';
 import type { BBoardDerivedState, BBoardContract, BBoardProviders, DeployedBBoardContract } from './common-types.js';
 import {
@@ -22,12 +17,12 @@ import {
   STATE,
 } from '@midnight-ntwrk/bboard-contract';
 import * as utils from './utils/index.js';
-import { deployContract, findDeployedContract, withZswapWitnesses } from '@midnight-ntwrk/midnight-js-contracts';
+import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { combineLatest, map, tap, from, type Observable } from 'rxjs';
+import { toHex } from '@midnight-ntwrk/midnight-js-utils';
 
 /** @internal */
-const createBBoardContract = (coinPublicKey: CoinPublicKey): BBoardContract =>
-  new Contract(withZswapWitnesses(witnesses)(encodeCoinPublicKey(coinPublicKey)));
+const bboardContractInstance: BBoardContract = new Contract(witnesses);
 
 /**
  * An API for a deployed bulletin board.
@@ -64,7 +59,7 @@ export class BBoardAPI implements DeployedBBoardAPI {
     providers: BBoardProviders,
     private readonly logger?: Logger,
   ) {
-    this.deployedContractAddress = deployedContract.finalizedDeployTxData.contractAddress;
+    this.deployedContractAddress = deployedContract.deployTxData.public.contractAddress;
     this.state$ = combineLatest(
       [
         // Combine public (ledger) state with...
@@ -76,7 +71,7 @@ export class BBoardAPI implements DeployedBBoardAPI {
                 ledgerState: {
                   ...ledgerState,
                   state: ledgerState.state === STATE.occupied ? 'occupied' : 'vacant',
-                  poster: utils.toHex(ledgerState.poster),
+                  poster: toHex(ledgerState.poster),
                 },
               },
             }),
@@ -99,7 +94,7 @@ export class BBoardAPI implements DeployedBBoardAPI {
           state: ledgerState.state,
           message: ledgerState.message.value,
           instance: ledgerState.instance,
-          isOwner: utils.toHex(ledgerState.poster) === utils.toHex(hashedSecretKey),
+          isOwner: toHex(ledgerState.poster) === toHex(hashedSecretKey),
         };
       },
     );
@@ -127,16 +122,16 @@ export class BBoardAPI implements DeployedBBoardAPI {
   async post(message: string): Promise<void> {
     this.logger?.info(`postingMessage: ${message}`);
 
-    const { txHash, blockHeight } =
+    const txData =
       // EXERCISE 3: CALL THE post CIRCUIT AND SUBMIT THE TRANSACTION TO THE NETWORK
-      await this.deployedContract.contractCircuitsInterface // EXERCISE ANSWER
+      await this.deployedContract.callTx // EXERCISE ANSWER
         .post(message); // EXERCISE ANSWER
 
     this.logger?.trace({
       transactionAdded: {
         circuit: 'post',
-        txHash,
-        blockHeight,
+        txHash: txData.public.txHash,
+        blockHeight: txData.public.blockHeight,
       },
     });
   }
@@ -152,16 +147,16 @@ export class BBoardAPI implements DeployedBBoardAPI {
   async takeDown(): Promise<void> {
     this.logger?.info('takingDownMessage');
 
-    const { txHash, blockHeight } =
+    const txData =
       // EXERCISE 4: CALL THE take_down CIRCUIT AND SUBMIT THE TRANSACTION TO THE NETWORK
-      await this.deployedContract.contractCircuitsInterface // EXERCISE ANSWER
+      await this.deployedContract.callTx // EXERCISE ANSWER
         .take_down(); // EXERCISE ANSWER
 
     this.logger?.trace({
       transactionAdded: {
         circuit: 'take_down',
-        txHash,
-        blockHeight,
+        txHash: txData.public.txHash,
+        blockHeight: txData.public.blockHeight,
       },
     });
   }
@@ -177,17 +172,17 @@ export class BBoardAPI implements DeployedBBoardAPI {
   static async deploy(providers: BBoardProviders, logger?: Logger): Promise<BBoardAPI> {
     logger?.info('deployContract');
 
-    const deployedBBoardContract = await deployContract(
-      // EXERCISE 5: FILL IN THE CORRECT ARGUMENTS TO deployContract
-      providers, // EXERCISE ANSWER
-      'bboardPrivateState', // EXERCISE ANSWER
-      await BBoardAPI.getPrivateState(providers), // EXERCISE ANSWER
-      createBBoardContract(providers.walletProvider.coinPublicKey), // EXERCISE ANSWER
-    );
+    // EXERCISE 5: FILL IN THE CORRECT ARGUMENTS TO deployContract
+    const deployedBBoardContract = await deployContract(providers, {
+      // EXERCISE ANSWER
+      privateStateKey: 'bboardPrivateState', // EXERCISE ANSWER
+      contract: bboardContractInstance,
+      initialPrivateState: await BBoardAPI.getPrivateState(providers), // EXERCISE ANSWER
+    });
 
     logger?.trace({
       contractDeployed: {
-        finalizedDeployTxData: deployedBBoardContract.finalizedDeployTxData,
+        finalizedDeployTxData: deployedBBoardContract.deployTxData.public,
       },
     });
 
@@ -198,7 +193,7 @@ export class BBoardAPI implements DeployedBBoardAPI {
    * Finds an already deployed bulletin board contract on the network, and joins it.
    *
    * @param providers The bulletin board providers.
-   * @param address The contract address of the deployed bulletin board contract to search for and join.
+   * @param contractAddress The contract address of the deployed bulletin board contract to search for and join.
    * @param logger An optional 'pino' logger to use for logging.
    * @returns A `Promise` that resolves with a {@link BBoardAPI} instance that manages the joined
    * {@link DeployedBBoardContract}; or rejects with an error.
@@ -210,19 +205,16 @@ export class BBoardAPI implements DeployedBBoardAPI {
       },
     });
 
-    const deployedBBoardContract = await findDeployedContract(
-      providers,
+    const deployedBBoardContract = await findDeployedContract(providers, {
       contractAddress,
-      createBBoardContract(providers.walletProvider.coinPublicKey),
-      {
-        privateStateKey: 'bboardPrivateState',
-        initialPrivateState: await BBoardAPI.getPrivateState(providers),
-      },
-    );
+      contract: bboardContractInstance,
+      privateStateKey: 'bboardPrivateState',
+      initialPrivateState: await BBoardAPI.getPrivateState(providers),
+    });
 
     logger?.trace({
       contractJoined: {
-        finalizedDeployTxData: deployedBBoardContract.finalizedDeployTxData,
+        finalizedDeployTxData: deployedBBoardContract.deployTxData.public,
       },
     });
 
@@ -231,7 +223,6 @@ export class BBoardAPI implements DeployedBBoardAPI {
 
   private static async getPrivateState(providers: BBoardProviders): Promise<BBoardPrivateState> {
     const existingPrivateState = await providers.privateStateProvider.get('bboardPrivateState');
-
     return existingPrivateState ?? createBBoardPrivateState(utils.randomBytes(32));
   }
 }

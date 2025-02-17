@@ -5,7 +5,7 @@
  */
 
 import { type MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
-import { type DeployedContract, type StateWithZswap } from '@midnight-ntwrk/midnight-js-contracts';
+import { type FoundContract } from '@midnight-ntwrk/midnight-js-contracts';
 import type { STATE, BBoardPrivateState, Contract, Witnesses } from '@midnight-ntwrk/bboard-contract';
 
 /**
@@ -36,10 +36,7 @@ export type PrivateStates = {
  *
  * @public
  */
-export type BBoardContract = Contract<
-  StateWithZswap<BBoardPrivateState>,
-  Witnesses<StateWithZswap<BBoardPrivateState>>
->;
+export type BBoardContract = Contract<BBoardPrivateState, Witnesses<BBoardPrivateState>>;
 
 /**
  * The keys of the circuits exported from {@link BBoardContract}.
@@ -60,7 +57,7 @@ export type BBoardProviders = MidnightProviders<BBoardCircuitKeys, PrivateStates
  *
  * @public
  */
-export type DeployedBBoardContract = DeployedContract<PrivateStates, 'bboardPrivateState', BBoardContract>;
+export type DeployedBBoardContract = FoundContract<BBoardPrivateState, BBoardContract>;
 
 /**
  * A type that represents the derived combination of public (or ledger), and private state.

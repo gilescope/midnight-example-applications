@@ -1,4 +1,4 @@
-import { type CircuitContext, QueryContext, sampleContractAddress } from '@midnight-ntwrk/compact-runtime';
+import { type CircuitContext, QueryContext, sampleContractAddress, constructorContext } from '@midnight-ntwrk/compact-runtime';
 import { Contract, type Ledger, ledger } from '../managed/counter/contract/index.cjs';
 import { type CounterPrivateState, witnesses } from '../witnesses.js';
 
@@ -10,11 +10,14 @@ export class CounterSimulator {
 
   constructor() {
     this.contract = new Contract<CounterPrivateState>(witnesses);
-    const [initialPrivateState, initialContractState] = this.contract.initialState({});
+    const { currentPrivateState, currentContractState, currentZswapLocalState } = this.contract.initialState(
+      constructorContext({}, '0'.repeat(64)),
+    );
     this.circuitContext = {
-      currentPrivateState: initialPrivateState,
-      originalState: initialContractState,
-      transactionContext: new QueryContext(initialContractState.data, sampleContractAddress()),
+      currentPrivateState,
+      currentZswapLocalState,
+      originalState: currentContractState,
+      transactionContext: new QueryContext(currentContractState.data, sampleContractAddress()),
     };
   }
 

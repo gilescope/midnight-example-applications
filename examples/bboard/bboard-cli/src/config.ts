@@ -1,14 +1,5 @@
 import path from 'node:path';
-import {
-  networkId,
-  setNetworkId,
-  toLedgerNetworkId,
-  toRuntimeNetworkId,
-  toZswapNetworkId,
-} from '@midnight-ntwrk/midnight-js-network-id';
-import * as zswap from '@midnight-ntwrk/zswap';
-import * as runtime from '@midnight-ntwrk/compact-runtime';
-import * as ledger from '@midnight-ntwrk/ledger';
+import { NetworkId, setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 export interface Config {
   readonly privateStateStoreName: string;
@@ -24,9 +15,9 @@ export interface Config {
 
 export const currentDir = path.resolve(new URL(import.meta.url).pathname, '..');
 
-export class DevnetLocalConfig implements Config {
+export class TestnetLocalConfig implements Config {
   privateStateStoreName = 'bboard-private-state';
-  logDir = path.resolve(currentDir, '..', 'logs', 'devnet-local', `${new Date().toISOString()}.log`);
+  logDir = path.resolve(currentDir, '..', 'logs', 'testnet-local', `${new Date().toISOString()}.log`);
   zkConfigPath = path.resolve(currentDir, '..', '..', 'contract', 'dist', 'managed', 'bboard');
   indexer = 'http://127.0.0.1:8088/api/v1/graphql';
   indexerWS = 'ws://127.0.0.1:8088/api/v1/graphql/ws';
@@ -34,11 +25,7 @@ export class DevnetLocalConfig implements Config {
   proofServer = 'http://127.0.0.1:6300';
 
   setNetworkId() {
-    const theNetworkId = networkId.devnet;
-    setNetworkId(theNetworkId);
-    zswap.setNetworkId(toZswapNetworkId(theNetworkId));
-    runtime.setNetworkId(toRuntimeNetworkId(theNetworkId));
-    ledger.setNetworkId(toLedgerNetworkId(theNetworkId));
+    setNetworkId(NetworkId.TestNet);
   }
 }
 
@@ -52,28 +39,20 @@ export class StandaloneConfig implements Config {
   proofServer = 'http://127.0.0.1:6300';
 
   setNetworkId() {
-    const theNetworkId = networkId.undeployed;
-    setNetworkId(theNetworkId);
-    zswap.setNetworkId(toZswapNetworkId(theNetworkId));
-    runtime.setNetworkId(toRuntimeNetworkId(theNetworkId));
-    ledger.setNetworkId(toLedgerNetworkId(theNetworkId));
+    setNetworkId(NetworkId.Undeployed);
   }
 }
 
-export class DevnetRemoteConfig implements Config {
+export class TestnetRemoteConfig implements Config {
   privateStateStoreName = 'bboard-private-state';
-  logDir = path.resolve(currentDir, '..', 'logs', 'devnet-remote', `${new Date().toISOString()}.log`);
+  logDir = path.resolve(currentDir, '..', 'logs', 'testnet-remote', `${new Date().toISOString()}.log`);
   zkConfigPath = path.resolve(currentDir, '..', '..', 'contract', 'dist', 'managed', 'bboard');
-  indexer = 'https://indexer.devnet.midnight.network/api/v1/graphql';
-  indexerWS = 'wss://indexer.devnet.midnight.network/api/v1/graphql/ws';
-  node = 'https://rpc.devnet.midnight.network';
+  indexer = 'https://indexer.testnet.midnight.network/api/v1/graphql';
+  indexerWS = 'wss://indexer.testnet.midnight.network/api/v1/graphql/ws';
+  node = 'https://rpc.testnet.midnight.network';
   proofServer = 'http://127.0.0.1:6300';
 
   setNetworkId() {
-    const theNetworkId = networkId.devnet;
-    setNetworkId(theNetworkId);
-    zswap.setNetworkId(toZswapNetworkId(theNetworkId));
-    runtime.setNetworkId(toRuntimeNetworkId(theNetworkId));
-    ledger.setNetworkId(toLedgerNetworkId(theNetworkId));
+    setNetworkId(NetworkId.TestNet);
   }
 }

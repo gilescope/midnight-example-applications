@@ -1,8 +1,8 @@
 import { it, describe, expect } from '@jest/globals';
 import { CounterSimulator } from './counter-simulator.js';
-import { networkId, setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
+import { NetworkId, setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
-setNetworkId(networkId.undeployed);
+setNetworkId(NetworkId.Undeployed);
 
 describe('Counter smart contract', () => {
   it('generates initial ledger state deterministically', () => {

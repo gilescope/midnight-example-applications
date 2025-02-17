@@ -2,7 +2,7 @@
 
 The code in this `welcome` directory is used in part 1 of the Midnight
 developer tutorial.  Its main function is to maintain on the ledger a
-set of **devnet** participants who have checked in by calling the
+set of **testnet** participants who have checked in by calling the
 `check_in` circuit.  Whenever someone attempts to check in, that
 user's identity is validated by verifying that the user is already
 included in the set of eligible participants.  The set of eligible

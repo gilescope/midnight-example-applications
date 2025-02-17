@@ -260,6 +260,6 @@ const toShortFormatContractAddress = (contractAddress: ContractAddress | undefin
   // Returns a new string made up of the first, and last, 8 characters of a given contract address.
   contractAddress ? (
     <span data-testid="board-address">
-      `0x${contractAddress?.replace(/^[A-Fa-f0-9]{6}([A-Fa-f0-9]{8}).*([A-Fa-f0-9]{8})$/g, '$1...$2')}`
+      0x{contractAddress?.replace(/^[A-Fa-f0-9]{6}([A-Fa-f0-9]{8}).*([A-Fa-f0-9]{8})$/g, '$1...$2')}
     </span>
   ) : undefined;

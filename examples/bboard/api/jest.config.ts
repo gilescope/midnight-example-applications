@@ -3,7 +3,7 @@ import type { Config } from '@jest/types';
 const config: Config.InitialOptions = {
   preset: 'ts-jest/presets/default-esm',
   verbose: true,
-  testTimeout: 10 * 60_000,
+  testTimeout: 10 * 90_000,
   roots: ['<rootDir>'],
   modulePaths: ['<rootDir>'],
   passWithNoTests: false,

@@ -1,5 +1,5 @@
 import * as uuid from 'uuid';
-import { fromHex } from './conversion-utils.js';
+import { fromHex } from '@midnight-ntwrk/midnight-js-utils';
 
 export type Cryptography = {
   randomSk: () => Uint8Array;

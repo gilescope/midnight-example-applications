@@ -15,6 +15,7 @@ import { Wallet } from '@midnight-ntwrk/wallet-api';
 import * as Rx from 'rxjs';
 import { nativeToken } from '@midnight-ntwrk/ledger';
 import { WalletBuilder } from '@midnight-ntwrk/wallet';
+import { getZswapNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 
 const waitForFunds = (wallet: Wallet) =>
   Rx.firstValueFrom(
@@ -31,7 +32,7 @@ export const initializeWallet = (
 ): Resource<Wallet> =>
   Resource.make(
     async () => {
-      const wallet = await WalletBuilder.buildFromSeed(indexer, indexerWS, proofServer, node, seed, 'warn');
+      const wallet = await WalletBuilder.buildFromSeed(indexer, indexerWS, proofServer, node, seed, getZswapNetworkId(), 'warn');
       wallet.start();
       const state = await Rx.firstValueFrom(wallet.state());
       logger.info(`Wallet seed is: ${seed}`);

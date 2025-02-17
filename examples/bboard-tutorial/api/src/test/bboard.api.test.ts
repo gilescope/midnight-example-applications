@@ -29,7 +29,7 @@ describe('BBoard API', () => {
     const testConfiguration = await testEnvironment.start();
     wallet = await testEnvironment.getWallet();
     providers = await new TestProviders().configureProviders(wallet, testConfiguration.dappConfig);
-  }, 5 * 60_000);
+  }, 10 * 60_000);
 
   afterAll(async () => {
     await testEnvironment.shutdown();

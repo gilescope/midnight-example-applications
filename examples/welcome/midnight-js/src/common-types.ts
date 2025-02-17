@@ -3,14 +3,14 @@ import { Cryptography } from './cryptography.js';
 import { Logger } from 'pino';
 import { Witnesses, WelcomePrivateState, Contract } from '@midnight-ntwrk/welcome-contract';
 import { SubscribablePrivateStateProvider } from './private-state-decorator.js';
-import { DeployedContract, StateWithZswap, SubmittedCallTx } from '@midnight-ntwrk/midnight-js-contracts';
+import { FoundContract, FinalizedCallTxData } from '@midnight-ntwrk/midnight-js-contracts';
 import { EphemeralStateBloc } from './ephemeral-state-bloc.js';
 
 export type PrivateStates = {
   welcomePrivateState: WelcomePrivateState;
 };
 
-export type WelcomeContract = Contract<StateWithZswap<WelcomePrivateState>, Witnesses<StateWithZswap<WelcomePrivateState>>>;
+export type WelcomeContract = Contract<WelcomePrivateState, Witnesses<WelcomePrivateState>>;
 
 export type WelcomeCircuitKeys = Exclude<keyof WelcomeContract['impureCircuits'], number | symbol>;
 
@@ -24,6 +24,6 @@ export type AppProviders = {
   ephemeralStateBloc: EphemeralStateBloc;
 };
 
-export type DeployedWelcomeContract = DeployedContract<PrivateStates, 'welcomePrivateState', WelcomeContract>;
+export type DeployedWelcomeContract = FoundContract<WelcomePrivateState, WelcomeContract>;
 
-export type SubmittedWelcomeCallTx = SubmittedCallTx<PrivateStates, 'welcomePrivateState', WelcomeContract, WelcomeCircuitKeys>;
+export type FinalizedWelcomeCallTxData = FinalizedCallTxData<WelcomePrivateState, WelcomeContract, WelcomeCircuitKeys>;
