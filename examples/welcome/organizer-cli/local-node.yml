@@ -1,6 +1,6 @@
 services:
   indexer:
-    image: "midnightnetwork/midnight-pubsub-indexer:latest"
+    image: "midnightnetwork/midnight-pubsub-indexer:1.1.3"
     ports:
       - "8088:8088"
     command: [ "midnight-pubsub-indexer", "-Devents-source.node-http-url=http://node:9944", "-Devents-source.node-ws-url=ws://node:9944" ]

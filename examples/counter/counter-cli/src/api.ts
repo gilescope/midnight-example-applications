@@ -26,7 +26,7 @@ import {
   type DeployedCounterContract,
   type PrivateStates,
 } from './common-types.js';
-import { type Config } from './config.js';
+import { type Config, contractConfig } from './config.js';
 import { toHex } from './conversion-utils.js';
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
 
@@ -81,7 +81,7 @@ export const increment = async (
   counterContract: DeployedCounterContract,
 ): Promise<{ blockHeight: number; txHash: string }> => {
   logger.info('Incrementing...');
-  const { txHash, blockHeight } = await counterContract.contractCircuitsInterface.increment().then((u) => u.submit());
+  const { txHash, blockHeight } = await counterContract.contractCircuitsInterface.increment();
   logger.info(`Transaction ${txHash} added in block ${blockHeight}`);
   return { txHash, blockHeight };
 };
@@ -124,7 +124,9 @@ export const waitForFunds = (wallet: Wallet) =>
       Rx.tap((state) => {
         const scanned = state.syncProgress?.synced ?? 0n;
         const total = state.syncProgress?.total.toString() ?? 'unknown number';
-        logger.info(`Wallet scanned ${scanned} blocks out of ${total}`);
+        logger.info(
+          `Wallet scanned ${scanned} blocks out of ${total}, transactions=${state.transactionHistory.length}`,
+        );
       }),
       Rx.filter((state) => {
         // Let's allow progress only if wallet is close enough
@@ -169,10 +171,10 @@ export const configureProviders = async (wallet: Wallet & Resource, config: Conf
   const walletAndMidnightProvider = await createWalletAndMidnightProvider(wallet);
   return {
     privateStateProvider: levelPrivateStateProvider<PrivateStates>({
-      privateStateStoreName: config.privateStateStoreName,
+      privateStateStoreName: contractConfig.privateStateStoreName,
     }),
     publicDataProvider: indexerPublicDataProvider(config.indexer, config.indexerWS),
-    zkConfigProvider: new NodeZkConfigProvider<'increment'>(config.zkConfigPath),
+    zkConfigProvider: new NodeZkConfigProvider<'increment'>(contractConfig.zkConfigPath),
     proofProvider: httpClientProofProvider(config.proofServer),
     walletProvider: walletAndMidnightProvider,
     midnightProvider: walletAndMidnightProvider,

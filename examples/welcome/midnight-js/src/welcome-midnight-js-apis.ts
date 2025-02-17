@@ -5,7 +5,7 @@ import {
   WelcomeProviders,
   DeployedWelcomeContract,
   PrivateStates,
-  UnsubmittedWelcomeCallTx,
+  SubmittedWelcomeCallTx,
 } from './common-types.js';
 import {
   CallTxFailed,
@@ -66,7 +66,7 @@ const getOrganizerSecretKey = async (providers: WelcomeProviders): Promise<Uint8
 const buildAndSubmitCallTx = (
   appProviders: AppProviders,
   action: Action,
-  buildTx: () => Promise<UnsubmittedWelcomeCallTx>,
+  submitTx: () => Promise<SubmittedWelcomeCallTx>,
 ): Promise<ActionId> => {
   const actionId = appProviders.crypto.randomUUID();
   void Rx.firstValueFrom(
@@ -78,20 +78,17 @@ const buildAndSubmitCallTx = (
         id: actionId,
       })
       .pipe(
-        Rx.concatMap(() => buildTx()),
         Rx.tap(() => appProviders.logger.info({ submittingTransaction: action })),
-        Rx.concatMap((u) =>
-          u.submit().then((finalizedTxData) => {
-            appProviders.logger.info({
-              transactionFinalized: {
-                circuitId: u.callTxData.circuitId,
-                status: finalizedTxData.status,
-                txId: finalizedTxData.txId,
-                txHash: finalizedTxData.txHash,
-                blockHeight: finalizedTxData.blockHeight,
-              },
-            });
-            return finalizedTxData;
+        Rx.concatMap(() => submitTx()),
+        Rx.tap((finalizedTxData) =>
+          appProviders.logger.info({
+            transactionFinalized: {
+              circuitId: finalizedTxData.circuitId,
+              status: finalizedTxData.status,
+              txId: finalizedTxData.txId,
+              txHash: finalizedTxData.txHash,
+              blockHeight: finalizedTxData.blockHeight,
+            },
           }),
         ),
         Rx.concatMap((finalizedTxData) => appProviders.ephemeralStateBloc.succeedAction(actionId, finalizedTxData)),

@@ -143,9 +143,7 @@ const addParticipant = async (
 ): Promise<void> => {
   const participantId = await rli.question(ADD_PARTICIPANT_QUESTION);
   logger.info(`Adding participant...`);
-  const finalizedTxData = await welcomeContract.contractCircuitsInterface
-    .add_participant(participantId)
-    .then((u) => u.submit());
+  const finalizedTxData = await welcomeContract.contractCircuitsInterface.add_participant(participantId);
   logger.info(`Participant '${participantId}' added in transaction ${finalizedTxData.txHash}`);
 };
 
@@ -158,9 +156,7 @@ const addOrganizer = async (
 ): Promise<void> => {
   const pk = await rli.question(ADD_ORGANIZER_QUESTION);
   logger.info(`Adding organizer...`);
-  const finalizedTxData = await welcomeContract.contractCircuitsInterface
-    .add_organizer(fromHex(pk))
-    .then((u) => u.submit());
+  const finalizedTxData = await welcomeContract.contractCircuitsInterface.add_organizer(fromHex(pk));
   logger.info(`Organizer '${pk}' added in transaction ${finalizedTxData.txHash}`);
 };
 

@@ -25,7 +25,6 @@ managed/
 midnight-level-db
 compactc
 
-
 coverage
 **/reports
 
@@ -40,6 +39,9 @@ coverage
 *.sln
 *.sw?
 
+*_cache
 
 # Emacs backup files
 *~
+
+*temp

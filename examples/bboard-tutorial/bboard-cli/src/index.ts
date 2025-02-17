@@ -11,20 +11,14 @@ import { stdin as input, stdout as output } from 'node:process';
 import { WebSocket } from 'ws';
 import { webcrypto } from 'crypto';
 import {
-  type BBoardContract,
   type BBoardProviders,
-  type DeployedBBoardContract,
   type PrivateStates,
-} from './common-types.js';
-import { deployContract, findDeployedContract, withZswapWitnesses } from '@midnight-ntwrk/midnight-js-contracts';
-import {
-  ledger,
-  witnesses,
-  Contract,
-  type Ledger,
-  createBBoardPrivateState,
-  STATE,
-} from '@midnight-ntwrk/bboard-contract';
+  BBoardAPI,
+  utils,
+  type BBoardDerivedState,
+  type DeployedBBoardContract,
+} from '@midnight-ntwrk/bboard-api';
+import { ledger, type Ledger, STATE } from '@midnight-ntwrk/bboard-contract';
 import {
   type BalancedTransaction,
   createBalancedTx,
@@ -36,17 +30,15 @@ import { type Wallet } from '@midnight-ntwrk/wallet-api';
 import * as Rx from 'rxjs';
 import { type CoinInfo, nativeToken, Transaction, type TransactionId } from '@midnight-ntwrk/ledger';
 import { Transaction as ZswapTransaction } from '@midnight-ntwrk/zswap';
-import { type CoinPublicKey, type ContractAddress, encodeCoinPublicKey } from '@midnight-ntwrk/compact-runtime';
 import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
 import { type Resource, WalletBuilder } from '@midnight-ntwrk/wallet';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { type Logger } from 'pino';
 import { type Config, StandaloneConfig } from './config.js';
-import { toHex } from './conversion-utils.js';
-import { type DockerComposeEnvironment } from 'testcontainers';
-import * as crypto from 'crypto';
+import type { StartedDockerComposeEnvironment, DockerComposeEnvironment } from 'testcontainers';
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
+import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
 
 // @ts-expect-error: It's needed to make Scala.js and WASM code able to use cryptography
 globalThis.crypto = webcrypto;
@@ -72,50 +64,6 @@ export const getBBoardLedgerState = (
     .then((contractState) => (contractState != null ? ledger(contractState.data) : null));
 
 /* **********************************************************************
- * createBBoardContract: create an undeployed contract object,
- * associated with the given wallet key and the witness
- * implementations defined over in the contract sub-project.
- */
-
-export const createBBoardContract = (coinPublicKey: CoinPublicKey): BBoardContract =>
-  new Contract(withZswapWitnesses(witnesses)(encodeCoinPublicKey(coinPublicKey)));
-
-/* **********************************************************************
- * join: find an already-deployed bulletin board contract on the
- * network and join it.  The user is prompted for the existing
- * contract's address.
- */
-
-const join = async (providers: BBoardProviders, rli: Interface, logger: Logger): Promise<DeployedBBoardContract> => {
-  const contractAddress = await rli.question('What is the contract address (in hex)? ');
-  const existingPrivateState = await providers.privateStateProvider.get('bboardPrivateState');
-  const deployedBBoardContract = await findDeployedContract(
-    providers,
-    contractAddress,
-    createBBoardContract(providers.walletProvider.coinPublicKey),
-    {
-      privateStateKey: 'bboardPrivateState',
-      initialPrivateState: existingPrivateState ?? createBBoardPrivateState(randomBytes(32)),
-    },
-  );
-  logger.info(`Joined the contract at address: ${deployedBBoardContract.finalizedDeployTxData.contractAddress}`);
-  return deployedBBoardContract;
-};
-
-/* **********************************************************************
- * deploy: deploy a brand new bulletin board contract to the network.
- */
-
-const deploy = async (providers: BBoardProviders, logger: Logger): Promise<DeployedBBoardContract> => {
-  logger.info(`Deploying a new bulletin board contract...`);
-  const deployedBBoardContract = await deployContract(
-    // EXERCISE 3: FILL IN THE CORRECT ARGUMENTS TO deployContract
-  );
-  logger.info(`Deployed contract at address: ${deployedBBoardContract.finalizedDeployTxData.contractAddress}`);
-  return deployedBBoardContract;
-};
-
-/* **********************************************************************
  * deployOrJoin: returns a contract, by prompting the user about
  * whether to deploy a new one or join an existing one and then
  * calling the appropriate helper.
@@ -128,18 +76,20 @@ You can do one of the following:
   3. Exit
 Which would you like to do? `;
 
-const deployOrJoin = async (
-  providers: BBoardProviders,
-  rli: Interface,
-  logger: Logger,
-): Promise<DeployedBBoardContract | null> => {
+const deployOrJoin = async (providers: BBoardProviders, rli: Interface, logger: Logger): Promise<BBoardAPI | null> => {
+  let api: BBoardAPI | null = null;
+
   while (true) {
     const choice = await rli.question(DEPLOY_OR_JOIN_QUESTION);
     switch (choice) {
       case '1':
-        return await deploy(providers, logger);
+        api = await BBoardAPI.deploy(providers, logger);
+        logger.info(`Deployed contract at address: ${api.deployedContractAddress}`);
+        return api;
       case '2':
-        return await join(providers, rli, logger);
+        api = await BBoardAPI.join(providers, await rli.question('What is the contract address (in hex)? '), logger);
+        logger.info(`Joined contract at address: ${api.deployedContractAddress}`);
+        return api;
       case '3':
         logger.info('Exiting...');
         return null;
@@ -147,32 +97,6 @@ const deployOrJoin = async (
         logger.error(`Invalid choice: ${choice}`);
     }
   }
-};
-
-/* **********************************************************************
- * post: prompt for a message to post and then call the post circuit
- * on the given contract.
- */
-
-const POST_QUESTION = `What message do you want to post? `;
-
-const post = async (deployedBBoardContract: DeployedBBoardContract, logger: Logger, rli: Interface): Promise<void> => {
-  const message = await rli.question(POST_QUESTION);
-  logger.info('Posting your message...');
-  const { txHash, blockHeight } =
-    // EXERCISE 4: CALL THE post CIRCUIT AND SUBMIT THE TRANSACTION TO THE NETWORK
-  logger.info(`Transaction ${txHash} added in block ${blockHeight}`);
-};
-
-/* **********************************************************************
- * takeDown: call the takeDown circuit on the given contract.
- */
-
-const takeDown = async (deployedBBoardContract: DeployedBBoardContract, logger: Logger): Promise<void> => {
-  logger.info('Taking down your last posted message...');
-  const { txHash, blockHeight } =
-    // EXERCISE 5: CALL THE take_down CIRCUIT AND SUBMIT THE TRANSACTION TO THE NETWORK
-  logger.info(`Transaction ${txHash} added in block ${blockHeight}`);
 };
 
 /* **********************************************************************
@@ -195,7 +119,7 @@ const displayLedgerState = async (
     logger.info(`Current state is: '${boardState}'`);
     logger.info(`Current message is: '${latestMessage}'`);
     logger.info(`Current instance is: ${ledgerState.instance}`);
-    logger.info(`Current poster is: '${toHex(ledgerState.poster)}'`);
+    logger.info(`Current poster is: '${utils.toHex(ledgerState.poster)}'`);
   }
 };
 
@@ -208,7 +132,27 @@ const displayPrivateState = async (providers: BBoardProviders, logger: Logger): 
   if (privateState === null) {
     logger.info(`There is no existing bulletin board private state`);
   } else {
-    logger.info(`Current secret key is: ${toHex(privateState.secretKey)}`);
+    logger.info(`Current secret key is: ${utils.toHex(privateState.secretKey)}`);
+  }
+};
+
+/* **********************************************************************
+ * displayDerivedState: shows the values of derived state which is made
+ * by combining the ledger state with private state. In this example, the
+ * derived state compares the poster key with the private secret key to
+ * determine if the current user is the poster of the current message.
+ */
+
+const displayDerivedState = (ledgerState: BBoardDerivedState | undefined, logger: Logger) => {
+  if (ledgerState === undefined) {
+    logger.info(`No bulletin board state currently available`);
+  } else {
+    const boardState = ledgerState.state === STATE.occupied ? 'occupied' : 'vacant';
+    const latestMessage = ledgerState.state === STATE.occupied ? ledgerState.message : 'none';
+    logger.info(`Current state is: '${boardState}'`);
+    logger.info(`Current message is: '${latestMessage}'`);
+    logger.info(`Current instance is: ${ledgerState.instance}`);
+    logger.info(`Current poster is: '${ledgerState.isOwner ? 'you' : 'not you'}'`);
   }
 };
 
@@ -224,35 +168,52 @@ You can do one of the following:
   2. Take down your message
   3. Display the current ledger state (known by everyone)
   4. Display the current private state (known only to this DApp instance)
-  5. Exit
+  5. Display the current derived state (known only to this DApp instance)
+  6. Exit
 Which would you like to do? `;
 
 const mainLoop = async (providers: BBoardProviders, rli: Interface, logger: Logger): Promise<void> => {
-  const deployedBBoardContract = await deployOrJoin(providers, rli, logger);
-  if (deployedBBoardContract === null) {
+  const bboardApi = await deployOrJoin(providers, rli, logger);
+  if (bboardApi === null) {
     return;
   }
-  while (true) {
-    const choice = await rli.question(MAIN_LOOP_QUESTION);
-    switch (choice) {
-      case '1':
-        await post(deployedBBoardContract, logger, rli);
-        break;
-      case '2':
-        await takeDown(deployedBBoardContract, logger);
-        break;
-      case '3':
-        await displayLedgerState(providers, deployedBBoardContract, logger);
-        break;
-      case '4':
-        await displayPrivateState(providers, logger);
-        break;
-      case '5':
-        logger.info('Exiting...');
-        return;
-      default:
-        logger.error(`Invalid choice: ${choice}`);
+  let currentState: BBoardDerivedState | undefined;
+  const stateObserver = {
+    next: (state: BBoardDerivedState) => (currentState = state),
+  };
+  const subscription = bboardApi.state$.subscribe(stateObserver);
+  try {
+    while (true) {
+      const choice = await rli.question(MAIN_LOOP_QUESTION);
+      switch (choice) {
+        case '1': {
+          const message = await rli.question(`What message do you want to post? `);
+          await bboardApi.post(message);
+          break;
+        }
+        case '2':
+          await bboardApi.takeDown();
+          break;
+        case '3':
+          await displayLedgerState(providers, bboardApi.deployedContract, logger);
+          break;
+        case '4':
+          await displayPrivateState(providers, logger);
+          break;
+        case '5':
+          displayDerivedState(currentState, logger);
+          break;
+        case '6':
+          logger.info('Exiting...');
+          return;
+        default:
+          logger.error(`Invalid choice: ${choice}`);
+      }
     }
+  } finally {
+    // While we allow errors to bubble up to the 'run' function, we will always need to dispose of the state
+    // subscription when we exit.
+    subscription.unsubscribe();
   }
 };
 
@@ -335,15 +296,9 @@ const buildWalletAndWaitForFunds = async (
   return wallet;
 };
 
-const randomBytes = (length: number): Uint8Array => {
-  const bytes = new Uint8Array(length);
-  crypto.getRandomValues(bytes);
-  return bytes;
-};
-
 // Generate a random see and create the wallet with that.
 const buildFreshWallet = async (config: Config, logger: Logger): Promise<Wallet & Resource> =>
-  await buildWalletAndWaitForFunds(config, logger, toHex(randomBytes(32)));
+  await buildWalletAndWaitForFunds(config, logger, utils.toHex(utils.randomBytes(32)));
 
 // Prompt for a seed and create the wallet with that.
 const buildWalletFromSeed = async (config: Config, rli: Interface, logger: Logger): Promise<Wallet & Resource> => {
@@ -390,6 +345,15 @@ const buildWallet = async (config: Config, rli: Interface, logger: Logger): Prom
   }
 };
 
+const mapContainerPort = (env: StartedDockerComposeEnvironment, url: string, containerName: string) => {
+  const mappedUrl = new URL(url);
+  const container = env.getContainer(containerName);
+
+  mappedUrl.port = String(container.getFirstMappedPort());
+
+  return mappedUrl.toString().replace(/\/+$/, '');
+};
+
 /* **********************************************************************
  * run: the main entry point that starts the whole bulletin board CLI.
  *
@@ -402,6 +366,13 @@ export const run = async (config: Config, logger: Logger, dockerEnv?: DockerComp
   let env;
   if (dockerEnv !== undefined) {
     env = await dockerEnv.up();
+
+    if (config instanceof StandaloneConfig) {
+      config.indexer = mapContainerPort(env, config.indexer, 'bboard-graphql-api');
+      config.indexerWS = mapContainerPort(env, config.indexerWS, 'bboard-graphql-api');
+      config.node = mapContainerPort(env, config.node, 'bboard-node');
+      config.proofServer = mapContainerPort(env, config.proofServer, 'bboard-proof-server');
+    }
   }
   const wallet = await buildWallet(config, rli, logger);
   try {

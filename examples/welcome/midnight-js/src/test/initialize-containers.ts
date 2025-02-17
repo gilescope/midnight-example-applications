@@ -16,8 +16,8 @@ export const initializeContainers = (logger: Logger): Resource<DockerServicePort
           path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../'),
           'test-compose.yml',
         )
-          .withWaitStrategy('welcome-proof-server', Wait.forLogMessage('Actix runtime found; starting in Actix runtime', 1))
-          .withWaitStrategy('welcome-indexer', Wait.forLogMessage(/http4s v[\d.]+ on blaze v[\d.]+ started at /, 1))
+          .withWaitStrategy('welcome-proof-server', Wait.forListeningPorts())
+          .withWaitStrategy('welcome-graphql-api', Wait.forListeningPorts())
           .withStartupTimeout(DEFAULT_STARTUP_TIMEOUT);
         logger.info('Starting containers...');
         return await env.up();
@@ -32,7 +32,7 @@ export const initializeContainers = (logger: Logger): Resource<DockerServicePort
       // This avoids port clashes when Welcome and DAO/Coracle tests are run concurrently.
       // The object below retrieves the randomly chosen host ports, so they can be passed to the other providers.
       proofServer: startedComposeEnv.getContainer('welcome-proof-server').getMappedPort(6300),
-      indexer: startedComposeEnv.getContainer('welcome-indexer').getMappedPort(8088),
+      indexer: startedComposeEnv.getContainer('welcome-graphql-api').getMappedPort(8088),
       node: startedComposeEnv.getContainer('welcome-node').getMappedPort(9944),
     })),
   );

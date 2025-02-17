@@ -23,6 +23,12 @@
       "inputs": ["src/**/*.ts", "src/**/*.mts", "src/**/*.tsx", "!src/**/*.test.ts", "!tests/**/*.ts", "tsconfig.json", "tsconfig.build.json", ".env"],
       "outputs": ["dist/**"]
     },
+    "build-storybook": {
+      "dependsOn": ["^build", "typecheck"],
+      "outputMode": "new-only",
+      "inputs": ["src/**/*.ts", "src/**/*.mts", "src/**/*.tsx", "!src/**/*.test.ts", "!tests/**/*.ts", "tsconfig.json", "tsconfig.build.json", ".env", "vite.config.ts", ".storybook/**"],
+      "outputs": ["storybook-static/**"]
+    },
     "lint": {
       "outputMode": "new-only",
       "dependsOn": ["compact", "^build", "typecheck"],
@@ -36,7 +42,7 @@
     },
     "check": {
       "outputMode": "new-only",
-      "dependsOn": ["build", "lint", "test"]
+      "dependsOn": ["build", "lint", "test", "build-storybook"]
     },
     "test-e2e": {
       "outputMode": "new-only",
@@ -50,6 +56,11 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "storybook": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["build"]
     }
   }
 }

@@ -24,24 +24,6 @@ export interface Config {
 
 export const currentDir = path.resolve(new URL(import.meta.url).pathname, '..');
 
-export class DevnetRemoteConfig implements Config {
-  privateStateStoreName = 'welcome-private-state';
-  logDir = path.resolve(currentDir, '..', 'logs', 'devnet-remote', `${new Date().toISOString()}.log`);
-  zkConfigPath = path.resolve(currentDir, '..', '..', 'contract', 'dist', 'managed', 'welcome');
-  indexer = 'https://pubsub.devnet-midnight.network:443/api/v1/graphql';
-  indexerWS = 'wss://pubsub.devnet-midnight.network:443/api/v1/graphql/ws';
-  node = 'https://alb-node-peer-1.devnet-midnight.network:9944';
-  proofServer = 'http://127.0.0.1:6300';
-  initialParticipants = [];
-  setNetworkId() {
-    const theNetworkId = networkId.devnet;
-    setNetworkId(theNetworkId);
-    zswap.setNetworkId(toZswapNetworkId(theNetworkId));
-    runtime.setNetworkId(toRuntimeNetworkId(theNetworkId));
-    ledger.setNetworkId(toLedgerNetworkId(theNetworkId));
-  }
-}
-
 export class DevnetLocalConfig implements Config {
   privateStateStoreName = 'welcome-private-state';
   logDir = path.resolve(currentDir, '..', 'logs', 'devnet-local', `${new Date().toISOString()}.log`);
@@ -78,13 +60,13 @@ export class StandaloneConfig implements Config {
   }
 }
 
-export class QaRemoteConfig implements Config {
+export class AriadneQaRemoteConfig implements Config {
   privateStateStoreName = 'welcome-private-state';
   logDir = path.resolve(currentDir, '..', 'logs', 'qa-remote', `${new Date().toISOString()}.log`);
   zkConfigPath = path.resolve(currentDir, '..', '..', 'contract', 'dist', 'managed', 'welcome');
-  indexer = 'https://pubsub-qa.devnet-midnight.network:443/api/v1/graphql';
-  indexerWS = 'wss://pubsub-qa.devnet-midnight.network:443/api/v1/graphql/ws';
-  node = 'https://alb-node-peer-1-qa.devnet-midnight.network:9944';
+  indexer = 'https://indexer.ariadne-qa.dev.midnight.network/api/v1/graphql';
+  indexerWS = 'wss://indexer.ariadne-qa.dev.midnight.network/api/v1/graphql/ws';
+  node = 'https://rpc.ariadne-qa.dev.midnight.network';
   proofServer = 'http://127.0.0.1:6300';
   initialParticipants = ['qa', 'tester', 'test', 'testing'];
   setNetworkId() {
@@ -96,13 +78,13 @@ export class QaRemoteConfig implements Config {
   }
 }
 
-export class JadeRemoteConfig implements Config {
+export class DevnetRemoteConfig implements Config {
   privateStateStoreName = 'welcome-private-state';
-  logDir = path.resolve(currentDir, '..', 'logs', 'jade-remote', `${new Date().toISOString()}.log`);
+  logDir = path.resolve(currentDir, '..', 'logs', 'devnet-remote', `${new Date().toISOString()}.log`);
   zkConfigPath = path.resolve(currentDir, '..', '..', 'contract', 'dist', 'managed', 'welcome');
-  indexer = 'https://pubsub.jade.midnight.network/api/v1/graphql';
-  indexerWS = 'wss://pubsub.jade.midnight.network/api/v1/graphql/ws';
-  node = 'http://node-01.jade.midnight.network:9944';
+  indexer = 'https://indexer.devnet.midnight.network/api/v1/graphql';
+  indexerWS = 'wss://indexer.devnet.midnight.network/api/v1/graphql/ws';
+  node = 'https://rpc.devnet.midnight.network';
   proofServer = 'http://127.0.0.1:6300';
   initialParticipants = ['qa', 'tester', 'test', 'testing'];
   setNetworkId() {

@@ -24,22 +24,11 @@
    ```
    You should see a version number printed, such as `3.6.0`.
 
-3. Set up Yarn credentials and log in to the Midnight devnet package server:
-   ```shell
-   yarn npm login -s midnight-ntwrk --always-auth
-   ```
-   For more information about configuring Yarn so that it remembers your credentials, see the Midnight developer tutorial.
-
 4. Download the Compact compiler, create a directory in which to place it, unzip the file in that directory, and export the following environment variable to point to it:
    ```sh
    export COMPACT_HOME=~/work/midnight/devnet1-compact
    ```
    Use the your own correct path, of course.
-
-5. Tell Docker about your credentials to log in to the Midnight Docker image server:
-   ```sh
-   docker login docker.midnight.tools -u <username>
-   ```
 
 ## The counter contract
 

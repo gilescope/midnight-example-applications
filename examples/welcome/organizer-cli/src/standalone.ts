@@ -8,6 +8,6 @@ const config = new StandaloneConfig();
 config.setNetworkId();
 const dockerEnv = new DockerComposeEnvironment(path.resolve(currentDir, '..'), 'standalone.yml')
   .withWaitStrategy('proof-server', Wait.forLogMessage('Actix runtime found; starting in Actix runtime', 1))
-  .withWaitStrategy('indexer', Wait.forLogMessage(/http4s v[\d.]+ on blaze v[\d.]+ started at /, 1));
+  .withWaitStrategy('graphql-api', Wait.forLogMessage(/Transactions subscription started/, 1));
 const logger = await createLogger(config.logDir);
 await run(config, logger, dockerEnv);

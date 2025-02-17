@@ -6,11 +6,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "jade-remote": "node --experimental-specifier-resolution=node dist/jade-remote.js",
-    "jade-remote-ps": "node --experimental-specifier-resolution=node dist/jade-remote-start-proof-server.js",
-    "qanet-remote": "node --experimental-specifier-resolution=node dist/qanet-remote.js",
     "devnet-remote": "node --experimental-specifier-resolution=node dist/devnet-remote.js",
     "devnet-remote-ps": "node --experimental-specifier-resolution=node dist/devnet-remote-start-proof-server.js",
+    "ariadne-qa-remote": "node --experimental-specifier-resolution=node dist/ariadne-qa-remote.js",
     "devnet-local": "node --experimental-specifier-resolution=node dist/devnet-local.js",
     "standalone": "docker compose -f standalone.yml pull && node --experimental-specifier-resolution=node dist/standalone.js",
     "prepack": "yarn build",

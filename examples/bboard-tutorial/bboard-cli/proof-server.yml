@@ -1,6 +1,6 @@
 services:
   proof-server:
-    image: "midnightnetwork/proof-server:latest"
+    image: "midnightnetwork/proof-server:2.0.7"
     command: ["midnight-proof-server --network devnet"]
     ports:
       - "6300:6300"

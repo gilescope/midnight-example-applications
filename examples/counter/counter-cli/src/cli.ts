@@ -3,7 +3,7 @@ import { type Wallet } from '@midnight-ntwrk/wallet-api';
 import { stdin as input, stdout as output } from 'node:process';
 import { createInterface, type Interface } from 'node:readline/promises';
 import { type Logger } from 'pino';
-import { type DockerComposeEnvironment } from 'testcontainers';
+import { type StartedDockerComposeEnvironment, type DockerComposeEnvironment } from 'testcontainers';
 import { type CounterProviders, type DeployedCounterContract } from './common-types.js';
 import { type Config, StandaloneConfig } from './config.js';
 import * as api from './api';
@@ -107,6 +107,15 @@ const buildWallet = async (config: Config, rli: Interface): Promise<(Wallet & Re
   }
 };
 
+const mapContainerPort = (env: StartedDockerComposeEnvironment, url: string, containerName: string) => {
+  const mappedUrl = new URL(url);
+  const container = env.getContainer(containerName);
+
+  mappedUrl.port = String(container.getFirstMappedPort());
+
+  return mappedUrl.toString().replace(/\/+$/, '');
+};
+
 export const run = async (config: Config, _logger: Logger, dockerEnv?: DockerComposeEnvironment): Promise<void> => {
   logger = _logger;
   api.setLogger(_logger);
@@ -114,6 +123,13 @@ export const run = async (config: Config, _logger: Logger, dockerEnv?: DockerCom
   let env;
   if (dockerEnv !== undefined) {
     env = await dockerEnv.up();
+
+    if (config instanceof StandaloneConfig) {
+      config.indexer = mapContainerPort(env, config.indexer, 'counter-graphql-api');
+      config.indexerWS = mapContainerPort(env, config.indexerWS, 'counter-graphql-api');
+      config.node = mapContainerPort(env, config.node, 'counter-node');
+      config.proofServer = mapContainerPort(env, config.proofServer, 'counter-proof-server');
+    }
   }
   const wallet = await buildWallet(config, rli);
   try {
