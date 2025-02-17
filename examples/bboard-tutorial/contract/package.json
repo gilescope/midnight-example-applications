@@ -1,5 +1,5 @@
 {
-  "name": "@midnight-ntwrk/bboard-contract",
+  "name": "@midnight-ntwrk/bboard-contract-tutorial",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

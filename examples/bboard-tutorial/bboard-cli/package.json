@@ -1,5 +1,5 @@
 {
-  "name": "@midnight-ntwrk/bboard-cli",
+  "name": "@midnight-ntwrk/bboard-cli-tutorial",
   "version": "0.1.0",
   "author": "IOG",
   "license": "MIT",
@@ -17,8 +17,8 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@midnight-ntwrk/bboard-api": "workspace:*",
-    "@midnight-ntwrk/bboard-contract": "workspace:*",
+    "@midnight-ntwrk/bboard-api-tutorial": "workspace:*",
+    "@midnight-ntwrk/bboard-contract-tutorial": "workspace:*",
     "pino": "^8.16.1",
     "ws": "^8.14.2"
   },

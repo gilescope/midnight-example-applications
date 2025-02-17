@@ -29,7 +29,7 @@ export const initializeContainers = (logger: Logger): Resource<DockerServicePort
     ),
     Resource.map((startedComposeEnv) => ({
       // Per the test compose file, host ports are chosen at random and mapped to the container ports specified in the compose file.
-      // This avoids port clashes when Welcome and DAO/Coracle tests are run concurrently.
+      // This avoids port clashes when Welcome tests are run concurrently.
       // The object below retrieves the randomly chosen host ports, so they can be passed to the other providers.
       proofServer: startedComposeEnv.getContainer('welcome-proof-server').getMappedPort(6300),
       indexer: startedComposeEnv.getContainer('welcome-indexer').getMappedPort(8088),

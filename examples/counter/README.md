@@ -120,4 +120,4 @@ yarn testnet-remote-ps
 
 Then follow the instructions from the CLI.  On the first run, you will want to create a new wallet and copy its address, so as to transfer funds to it from your Midnight Lace wallet.
 
-You can find much more information in part 2 of the [Midnight developer tutorial](https://docs.midnight.network/develop/tutorial/building/).
+You can find much more information in part 2 of the [Midnight developer tutorial](https://docs.midnight.network/develop/tutorial/).

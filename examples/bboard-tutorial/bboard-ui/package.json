@@ -1,5 +1,5 @@
 {
-  "name": "@midnight-ntwrk/bboard-ui",
+  "name": "@midnight-ntwrk/bboard-ui-tutorial",
   "version": "0.1.0",
   "author": "IOG",
   "license": "MIT",
@@ -17,8 +17,8 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@midnight-ntwrk/bboard-api": "workspace:*",
-    "@midnight-ntwrk/bboard-contract": "workspace:*",
+    "@midnight-ntwrk/bboard-api-tutorial": "workspace:*",
+    "@midnight-ntwrk/bboard-contract-tutorial": "workspace:*",
     "@mui/icons-material": "^5.14.14",
     "@mui/material": "^5.14.14",
     "buffer": "^6.0.3",

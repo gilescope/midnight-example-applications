@@ -9,10 +9,9 @@ const COMPACT_HOME_ENV = process.env.COMPACT_HOME;
 let compactPath;
 if (COMPACT_HOME_ENV != null) {
   compactPath = COMPACT_HOME_ENV;
-  console.log(`COMPACT_HOME env variable is set; using Compact from ${compactPath}`);
+  console.log(`'COMPACT_HOME' env variable is set; using Compact from ${compactPath}`);
 } else {
-  compactPath = path.resolve(__dirname, '..', 'compactc');
-  console.log(`COMPACT_HOME env variable is not set; using fetched compact from ${compactPath}`);
+  throw new Error(`'COMPACT_HOME' environment variable is not set`);
 }
 
 // yarn runs everything with node...
