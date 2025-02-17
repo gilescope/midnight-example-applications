@@ -1,0 +1,33 @@
+services:
+  proof-server:
+    image: "midnightnetwork/proof-server:latest"
+    container_name: "welcome-proof-server"
+    ports:
+      - "6300"
+    environment:
+      RUST_BACKTRACE: "full"
+  indexer:
+    image: "midnightnetwork/midnight-pubsub-indexer:latest"
+    container_name: "welcome-indexer"
+    ports:
+      - "8088"
+    command: ["midnight-pubsub-indexer", "-Devents-source.node-http-url=http://node:9944", "-Devents-source.node-ws-url=ws://node:9944"]
+    environment:
+      OTEL_JAVAAGENT_ENABLED: "false"
+    depends_on:
+      node:
+        condition: service_healthy
+  node:
+    image: "midnightnetwork/midnight-node:latest"
+    container_name: "welcome-node"
+    platform: linux/amd64
+    ports:
+      - "9944"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9944/health" ]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    environment:
+      RUN_DEV_NET: "TRUE"
