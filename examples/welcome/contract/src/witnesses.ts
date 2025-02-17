@@ -26,5 +26,5 @@ export const witnesses = {
   set_local_id: (
     { privateState }: WitnessContext<Ledger, WelcomePrivateState>,
     participantId: string,
-  ): [WelcomePrivateState, void] => [{ ...privateState, participantId }, undefined],
+  ): [WelcomePrivateState, []] => [{ ...privateState, participantId }, []],
 };

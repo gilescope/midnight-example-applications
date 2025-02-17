@@ -1,4 +1,4 @@
-pragma language_version >= 0.12.1;
+pragma language_version >= 0.14.0;
 
 import CompactStandardLibrary;
 
@@ -6,6 +6,6 @@ import CompactStandardLibrary;
 export ledger round: Counter;
 
 // transition function changing public state
-export circuit increment(): Void {
+export circuit increment(): [] {
   round.increment(1);
 }

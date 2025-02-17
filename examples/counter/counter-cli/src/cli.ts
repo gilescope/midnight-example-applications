@@ -6,7 +6,7 @@ import { type Logger } from 'pino';
 import { type StartedDockerComposeEnvironment, type DockerComposeEnvironment } from 'testcontainers';
 import { type CounterProviders, type DeployedCounterContract } from './common-types.js';
 import { type Config, StandaloneConfig } from './config.js';
-import * as api from './api';
+import * as api from './api.js';
 
 let logger: Logger;
 
@@ -77,7 +77,7 @@ const mainLoop = async (providers: CounterProviders, rli: Interface): Promise<vo
 
 const buildWalletFromSeed = async (config: Config, rli: Interface): Promise<Wallet & Resource> => {
   const seed = await rli.question('Enter your wallet seed: ');
-  return await api.buildWalletAndWaitForFunds(config, seed);
+  return await api.buildWalletAndWaitForFunds(config, seed, '');
 };
 
 const WALLET_LOOP_QUESTION = `
@@ -89,7 +89,7 @@ Which would you like to do? `;
 
 const buildWallet = async (config: Config, rli: Interface): Promise<(Wallet & Resource) | null> => {
   if (config instanceof StandaloneConfig) {
-    return await api.buildWalletAndWaitForFunds(config, GENESIS_MINT_WALLET_SEED);
+    return await api.buildWalletAndWaitForFunds(config, GENESIS_MINT_WALLET_SEED, '');
   }
   while (true) {
     const choice = await rli.question(WALLET_LOOP_QUESTION);

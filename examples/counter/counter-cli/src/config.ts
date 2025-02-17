@@ -47,3 +47,4 @@ export class TestnetRemoteConfig implements Config {
     setNetworkId(NetworkId.TestNet);
   }
 }
+

@@ -11,8 +11,7 @@
     "prepack": "yarn build",
     "build": "tsc && vite build --mode testnet && cp -r ../contract/dist/managed/welcome/keys ./dist/keys && cp -r ../contract/dist/managed/welcome/zkir ./dist/zkir",
     "preview": "vite preview",
-    "lint": "eslint ./src",
-    "test": "jest --passWithNoTests"
+    "lint": "eslint ./src"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",

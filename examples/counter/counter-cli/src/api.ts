@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
 import { Contract, ledger, witnesses } from '@midnight-ntwrk/counter-contract';
 import { type CoinInfo, nativeToken, Transaction, type TransactionId } from '@midnight-ntwrk/ledger';
@@ -30,6 +32,8 @@ import { type Config, contractConfig } from './config.js';
 import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
 import { toHex } from '@midnight-ntwrk/midnight-js-utils';
 import { getLedgerNetworkId, getZswapNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
+import * as fsAsync from 'node:fs/promises';
+import * as fs from 'node:fs';
 
 let logger: Logger;
 // @ts-expect-error: It's needed to make Scala.js and WASM code able to use cryptography
@@ -77,6 +81,7 @@ export const increment = async (
   counterContract: DeployedCounterContract,
 ): Promise<{ blockHeight: number; txHash: string }> => {
   logger.info('Incrementing...');
+  await new Promise((resolve) => setTimeout(resolve, 2000)); // timeout needed due to bug PM-12428
   const tx = await counterContract.callTx.increment();
   const { txHash, blockHeight } = tx.public;
   logger.info(`Transaction ${txHash} added in block ${blockHeight}`);
@@ -117,6 +122,41 @@ export const createWalletAndMidnightProvider = async (wallet: Wallet): Promise<W
   };
 };
 
+export const waitForSync = (wallet: Wallet) =>
+  Rx.firstValueFrom(
+    wallet.state().pipe(
+      Rx.throttleTime(5_000),
+      Rx.tap((state) => {
+        const scanned = state.syncProgress?.synced ?? 0n;
+        const total = state.syncProgress?.total.toString() ?? 'unknown number';
+        const txs = state.transactionHistory.length;
+        logger.info(`Wallet scanned ${scanned} indices out of ${total}, transactions=${txs}`);
+      }),
+      Rx.filter((state) => {
+        // Let's allow progress only if wallet is synced fully
+        const synced = state.syncProgress?.synced ?? 0n;
+        const total = state.syncProgress?.total ?? 50n;
+        return state.syncProgress !== undefined && total === synced;
+      }),
+    ),
+  );
+
+export const waitForSyncProgress = async (wallet: Wallet) =>
+  await Rx.firstValueFrom(
+    wallet.state().pipe(
+      Rx.throttleTime(5_000),
+      Rx.tap((state) => {
+        const scanned = state.syncProgress?.synced ?? 0n;
+        const total = state.syncProgress?.total.toString() ?? 'unknown number';
+        logger.info(`Wallet scanned ${scanned} indices out of ${total}`);
+      }),
+      Rx.filter((state) => {
+        // Let's allow progress only if syncProgress is defined
+        return state.syncProgress !== undefined;
+      }),
+    ),
+  );
+
 export const waitForFunds = (wallet: Wallet) =>
   Rx.firstValueFrom(
     wallet.state().pipe(
@@ -142,17 +182,100 @@ export const waitForFunds = (wallet: Wallet) =>
 export const buildWalletAndWaitForFunds = async (
   { indexer, indexerWS, node, proofServer }: Config,
   seed: string,
+  filename: string,
 ): Promise<Wallet & Resource> => {
-  const wallet = await WalletBuilder.buildFromSeed(
-    indexer,
-    indexerWS,
-    proofServer,
-    node,
-    seed,
-    getZswapNetworkId(),
-    'warn',
-  );
-  wallet.start();
+  const directoryPath = process.env.SYNC_CACHE;
+  let wallet: Wallet & Resource;
+  if (directoryPath !== undefined) {
+    if (fs.existsSync(`${directoryPath}/${filename}`)) {
+      logger.info(`Attempting to restore state from ${directoryPath}/${filename}`);
+      try {
+        const serializedStream = fs.createReadStream(`${directoryPath}/${filename}`, 'utf-8');
+        const serialized = await streamToString(serializedStream);
+        serializedStream.on('finish', () => {
+          serializedStream.close();
+        });
+        wallet = await WalletBuilder.restore(indexer, indexerWS, proofServer, node, serialized, 'info');
+        wallet.start();
+        const stateObject = JSON.parse(serialized);
+        if ((await isAnotherChain(wallet, Number(stateObject.offset))) === true) {
+          logger.warn('The chain was reset, building wallet from scratch');
+          wallet = await WalletBuilder.buildFromSeed(
+            indexer,
+            indexerWS,
+            proofServer,
+            node,
+            seed,
+            getZswapNetworkId(),
+            'info',
+          );
+          wallet.start();
+        } else {
+          const newState = await waitForSync(wallet);
+          // allow for situations when there's no new index in the network between runs
+          if ((newState.syncProgress?.total ?? 0n) >= stateObject.offset - 1) {
+            logger.info('Wallet was able to sync from restored state');
+          } else {
+            logger.info(`Offset: ${stateObject.offset}`);
+            logger.info(`SyncProgress.total: ${newState.syncProgress?.total}`);
+            logger.warn('Wallet was not able to sync from restored state, building wallet from scratch');
+            wallet = await WalletBuilder.buildFromSeed(
+              indexer,
+              indexerWS,
+              proofServer,
+              node,
+              seed,
+              getZswapNetworkId(),
+              'info',
+            );
+            wallet.start();
+          }
+        }
+      } catch (error: unknown) {
+        if (typeof error === 'string') {
+          logger.error(error);
+        } else if (error instanceof Error) {
+          logger.error(error.message);
+        }
+        logger.warn('Wallet was not able to restore using the stored state, building wallet from scratch');
+        wallet = await WalletBuilder.buildFromSeed(
+          indexer,
+          indexerWS,
+          proofServer,
+          node,
+          seed,
+          getZswapNetworkId(),
+          'info',
+        );
+        wallet.start();
+      }
+    } else {
+      logger.info('Wallet save file not found, building wallet from scratch');
+      wallet = await WalletBuilder.buildFromSeed(
+        indexer,
+        indexerWS,
+        proofServer,
+        node,
+        seed,
+        getZswapNetworkId(),
+        'info',
+      );
+      wallet.start();
+    }
+  } else {
+    logger.info('File path for save file not found, building wallet from scratch');
+    wallet = await WalletBuilder.buildFromSeed(
+      indexer,
+      indexerWS,
+      proofServer,
+      node,
+      seed,
+      getZswapNetworkId(),
+      'info',
+    );
+    wallet.start();
+  }
+
   const state = await Rx.firstValueFrom(wallet.state());
   logger.info(`Your wallet seed is: ${seed}`);
   logger.info(`Your wallet address is: ${state.address}`);
@@ -173,7 +296,7 @@ export const randomBytes = (length: number): Uint8Array => {
 };
 
 export const buildFreshWallet = async (config: Config): Promise<Wallet & Resource> =>
-  await buildWalletAndWaitForFunds(config, toHex(randomBytes(32)));
+  await buildWalletAndWaitForFunds(config, toHex(randomBytes(32)), '');
 
 export const configureProviders = async (wallet: Wallet & Resource, config: Config) => {
   const walletAndMidnightProvider = await createWalletAndMidnightProvider(wallet);
@@ -192,3 +315,54 @@ export const configureProviders = async (wallet: Wallet & Resource, config: Conf
 export function setLogger(_logger: Logger) {
   logger = _logger;
 }
+
+export const streamToString = async (stream: fs.ReadStream): Promise<string> => {
+  const chunks: Buffer[] = [];
+  return await new Promise((resolve, reject) => {
+    stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+    stream.on('error', (err) => {
+      reject(err);
+    });
+    stream.on('end', () => {
+      resolve(Buffer.concat(chunks).toString('utf8'));
+    });
+  });
+};
+
+export const isAnotherChain = async (wallet: Wallet, offset: number) => {
+  const state = await waitForSyncProgress(wallet);
+  // allow for situations when there's no new index in the network between runs
+  if (state.syncProgress !== undefined) {
+    return state.syncProgress.total < offset - 1;
+  }
+};
+
+export const saveState = async (wallet: Wallet, filename: string) => {
+  const directoryPath = process.env.SYNC_CACHE;
+  if (directoryPath !== undefined) {
+    logger.info(`Saving state in ${directoryPath}/${filename}`);
+    try {
+      await fsAsync.mkdir(directoryPath, { recursive: true });
+      const serializedState = await wallet.serializeState();
+      const writer = fs.createWriteStream(`${directoryPath}/${filename}`);
+      writer.write(serializedState);
+
+      writer.on('finish', function () {
+        logger.info(`File '${directoryPath}/${filename}' written successfully.`);
+      });
+
+      writer.on('error', function (err) {
+        logger.error(err);
+      });
+      writer.end();
+    } catch (e) {
+      if (typeof e === 'string') {
+        logger.warn(e);
+      } else if (e instanceof Error) {
+        logger.warn(e.message);
+      }
+    }
+  } else {
+    logger.info('Not saving cache as sync cache was not defined');
+  }
+};
