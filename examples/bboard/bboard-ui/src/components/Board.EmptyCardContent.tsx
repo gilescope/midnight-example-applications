@@ -35,16 +35,17 @@ export const EmptyCardContent: React.FC<Readonly<EmptyCardContentProps>> = ({
         <Typography align="center" variant="h1" color="primary.dark">
           <BoardAddIcon fontSize="large" />
         </Typography>
-        <Typography align="center" variant="body2" color="primary.dark">
+        <Typography data-testid="board-posted-message" align="center" variant="body2" color="primary.dark">
           Create a new Board, or join an existing one...
         </Typography>
       </CardContent>
       <CardActions disableSpacing>
-        <IconButton title="Create a new board" onClick={onCreateBoardCallback}>
+        <IconButton title="Create a new board" data-testid="board-deploy-btn" onClick={onCreateBoardCallback}>
           <CreateBoardIcon />
         </IconButton>
         <IconButton
           title="Join an existing board"
+          data-testid="board-join-btn"
           onClick={() => {
             setTextPromptOpen(true);
           }}

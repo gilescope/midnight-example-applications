@@ -9,7 +9,6 @@ services:
   chain-indexer:
     container_name: 'counter-chain-indexer'
     image: 'midnightnetwork/midnight-pubsub-indexer:1.2.0'
-    platform: linux/amd64
     ports:
       - '0:8088'
     command: ['-Dlogback.configurationFile=logback-json-file.xml']
@@ -39,7 +38,6 @@ services:
   wallet-indexer:
     container_name: 'counter-wallet-indexer'
     image: 'midnightnetwork/midnight-pubsub-indexer:1.2.0'
-    platform: linux/amd64
     expose: ['8088']
     ports:
       - '0:8088'
@@ -60,7 +58,6 @@ services:
   graphql-api:
     container_name: 'counter-graphql-api'
     image: 'midnightnetwork/midnight-pubsub-indexer:1.2.0'
-    platform: linux/amd64
     expose: ['8088']
     ports:
       - '0:8088'

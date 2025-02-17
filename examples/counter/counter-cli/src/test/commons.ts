@@ -1,4 +1,4 @@
-import { type Config, DevnetRemoteConfig, AriadneQaRemoteConfig, StandaloneConfig, currentDir } from '../config';
+import { type Config, DevnetRemoteConfig, StandaloneConfig, currentDir } from '../config';
 import {
   DockerComposeEnvironment,
   GenericContainer,
@@ -47,7 +47,7 @@ export function parseArgs(required: string[]): TestConfiguration {
     }
   }
 
-  let cfg: Config = new AriadneQaRemoteConfig();
+  let cfg: Config = new DevnetRemoteConfig();
   let env = '';
   if (required.includes('env')) {
     if (process.env.TEST_ENV !== undefined) {
@@ -56,9 +56,6 @@ export function parseArgs(required: string[]): TestConfiguration {
       throw new Error('TEST_ENV environment variable is not defined.');
     }
     switch (env) {
-      case 'ariadne-qa':
-        cfg = new AriadneQaRemoteConfig();
-        break;
       case 'devnet':
         cfg = new DevnetRemoteConfig();
         break;
@@ -107,7 +104,6 @@ export class TestEnvironment {
           'counter-proof-server',
           Wait.forLogMessage('Actix runtime found; starting in Actix runtime', 1),
         )
-        .withWaitStrategy('counter-node', Wait.forLogMessage(/Accepting new connection [\d]\/[\d]/, 1))
         .withWaitStrategy('counter-graphql-api', Wait.forLogMessage(/Transactions subscription started/, 1));
       this.env = await this.dockerEnv.up();
 

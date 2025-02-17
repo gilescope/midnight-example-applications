@@ -1,14 +1,15 @@
 services:
   proof-server:
-    image: "midnightnetwork/proof-server:latest"
+  # pinned for now due to a more recent halo2 image tagged as latest
+    image: "midnightnetwork/proof-server:2.0.7"
+    container_name: 'counter-proof-server'
     ports:
       - "6300:6300"
     environment:
       RUST_BACKTRACE: "full"
   chain-indexer:
-    container_name: 'chain-indexer'
+    container_name: 'counter-chain-indexer'
     image: 'midnightnetwork/midnight-pubsub-indexer:latest'
-    platform: linux/amd64
     ports:
       - '0:8088'
     command: ['-Dlogback.configurationFile=logback-json-file.xml']
@@ -36,9 +37,8 @@ services:
       redis:
         condition: service_started
   wallet-indexer:
-    container_name: 'wallet-indexer'
+    container_name: 'counter-wallet-indexer'
     image: 'midnightnetwork/midnight-pubsub-indexer:latest'
-    platform: linux/amd64
     expose: ['8088']
     ports:
       - '0:8088'
@@ -57,9 +57,8 @@ services:
       chain-indexer:
         condition: service_healthy
   graphql-api:
-    container_name: 'graphql-api'
+    container_name: 'counter-graphql-api'
     image: 'midnightnetwork/midnight-pubsub-indexer:latest'
-    platform: linux/amd64
     expose: ['8088']
     ports:
       - '8088:8088'
@@ -78,7 +77,7 @@ services:
       chain-indexer:
         condition: service_healthy
   postgres:
-    container_name: 'postgres'
+    container_name: 'counter-postgres'
     image: postgres:15
     ports:
       - '0:5432'
@@ -87,13 +86,14 @@ services:
       POSTGRES_PASSWORD: 'indexer'
       POSTGRES_DB: 'indexer'
   redis:
-    container_name: 'redis'
+    container_name: 'counter-redis'
     image: redis:7.2.4
     ports:
       - 0:6379
   node:
     image: "midnightnetwork/midnight-node:latest"
     platform: linux/amd64
+    container_name: 'counter-node'
     ports:
       - "9944:9944"
     healthcheck:

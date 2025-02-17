@@ -30,9 +30,13 @@ const App: React.FC = () => {
     <Box sx={{ background: '#000', minHeight: '100vh' }}>
       <MainLayout>
         {boardDeployments.map((boardDeployment, idx) => (
-          <Board key={`board-${idx}`} boardDeployment$={boardDeployment} />
+          <div data-testid={`board-${idx}`} key={`board-${idx}`}>
+            <Board boardDeployment$={boardDeployment} />
+          </div>
         ))}
-        <Board />
+        <div data-testid="board-start">
+          <Board />
+        </div>
       </MainLayout>
     </Box>
   );

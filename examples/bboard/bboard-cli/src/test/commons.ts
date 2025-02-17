@@ -1,4 +1,4 @@
-import { type Config, DevnetRemoteConfig, AriadneQaRemoteConfig, StandaloneConfig } from '../config';
+import { type Config, DevnetRemoteConfig, StandaloneConfig } from '../config';
 
 export interface TestConfig {
   seed: string;
@@ -31,7 +31,7 @@ export function parseArgs(required: string[]): TestConfig {
     }
   }
 
-  let cfg: Config = new AriadneQaRemoteConfig();
+  let cfg: Config = new DevnetRemoteConfig();
   let env = '';
   if (required.includes('env')) {
     if (process.env.TEST_ENV !== undefined) {
@@ -40,9 +40,6 @@ export function parseArgs(required: string[]): TestConfig {
       throw new Error('TEST_ENV environment variable is not defined.');
     }
     switch (env) {
-      case 'ariadne-qa':
-        cfg = new AriadneQaRemoteConfig();
-        break;
       case 'devnet':
         cfg = new DevnetRemoteConfig();
         break;

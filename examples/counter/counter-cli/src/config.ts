@@ -68,18 +68,3 @@ export class DevnetRemoteConfig implements Config {
     ledger.setNetworkId(toLedgerNetworkId(theNetworkId));
   }
 }
-
-export class AriadneQaRemoteConfig implements Config {
-  logDir = path.resolve(currentDir, '..', 'logs', 'ariadne-qa-remote', `${new Date().toISOString()}.log`);
-  indexer = 'https://indexer.ariadne-qa.dev.midnight.network/api/v1/graphql';
-  indexerWS = 'wss://indexer.ariadne-qa.dev.midnight.network/api/v1/graphql/ws';
-  node = 'https://rpc.ariadne-qa.dev.midnight.network';
-  proofServer = 'http://127.0.0.1:6300';
-  constructor() {
-    const theNetworkId = networkId.devnet;
-    setNetworkId(theNetworkId);
-    zswap.setNetworkId(toZswapNetworkId(theNetworkId));
-    runtime.setNetworkId(toRuntimeNetworkId(theNetworkId));
-    ledger.setNetworkId(toLedgerNetworkId(theNetworkId));
-  }
-}

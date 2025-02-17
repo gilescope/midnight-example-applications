@@ -48,12 +48,12 @@ export const TextPromptDialog: React.FC<Readonly<TextPromptDialogProps>> = ({ pr
       </DialogContent>
 
       <DialogActions>
-        <Button variant="contained" data-testid="textprompt-dialog-cancel-button" disableElevation onClick={onCancel}>
+        <Button variant="contained" data-testid="textprompt-dialog-cancel-btn" disableElevation onClick={onCancel}>
           Cancel
         </Button>
         <Button
           variant="contained"
-          data-testid="textprompt-dialog-ok-button"
+          data-testid="textprompt-dialog-ok-btn"
           disabled={!text.length}
           disableElevation
           onClick={(_) => {

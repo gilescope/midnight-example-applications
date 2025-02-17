@@ -8,8 +8,6 @@
   "scripts": {
     "devnet-remote": "node --experimental-specifier-resolution=node dist/launcher/devnet-remote.js",
     "devnet-remote-ps": "node --experimental-specifier-resolution=node dist/launcher/devnet-remote-start-proof-server.js",
-    "ariadne-qa-remote": "node --experimental-specifier-resolution=node dist/launcher/ariadne-qa-remote.js",
-    "ariadne-qa-remote-ps": "node --experimental-specifier-resolution=node dist/launcher/ariadne-qa-remote-start-proof-server.js",
     "devnet-local": "node --experimental-specifier-resolution=node dist/launcher/devnet-local.js",
     "standalone": "docker compose -f standalone.yml pull && node --experimental-specifier-resolution=node dist/launcher/standalone.js",
     "prepack": "yarn build",

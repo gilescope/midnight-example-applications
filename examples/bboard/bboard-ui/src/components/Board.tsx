@@ -159,14 +159,16 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
             sx={{ position: 'absolute', color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
             open={isWorking}
           >
-            <CircularProgress />
+            <CircularProgress data-testid="board-working-indicator" />
           </Backdrop>
           <Backdrop
             sx={{ position: 'absolute', color: '#ff0000', zIndex: (theme) => theme.zIndex.drawer + 1 }}
             open={!!errorMessage}
           >
             <StopIcon fontSize="large" />
-            <Typography component="div">{errorMessage}</Typography>
+            <Typography component="div" data-testid="board-error-message">
+              {errorMessage}
+            </Typography>
           </Backdrop>
           <CardHeader
             avatar={
@@ -195,12 +197,13 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
           <CardContent>
             {boardState ? (
               boardState.state === STATE.occupied ? (
-                <Typography minHeight={160} color="primary">
+                <Typography data-testid="board-posted-message" minHeight={160} color="primary">
                   {boardState.message}
                 </Typography>
               ) : (
                 <TextField
                   id="message-prompt"
+                  data-testid="board-message-prompt"
                   variant="outlined"
                   focused
                   fullWidth
@@ -214,7 +217,6 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
                   onChange={(e) => {
                     setMessagePrompt(e.target.value);
                   }}
-                  data-testid="message-prompt"
                 />
               )
             ) : (
@@ -226,6 +228,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
               <React.Fragment>
                 <IconButton
                   title="Post message"
+                  data-testid="board-post-message-btn"
                   disabled={boardState?.state === STATE.occupied || !messagePrompt?.length}
                   onClick={onPostMessage}
                 >
@@ -233,6 +236,7 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
                 </IconButton>
                 <IconButton
                   title="Take down message"
+                  data-testid="board-take-down-message-btn"
                   disabled={
                     boardState?.state === STATE.vacant || (boardState?.state === STATE.occupied && !boardState.isOwner)
                   }
@@ -252,8 +256,10 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
 };
 
 /** @internal */
-const toShortFormatContractAddress = (contractAddress: ContractAddress | undefined): string | undefined =>
+const toShortFormatContractAddress = (contractAddress: ContractAddress | undefined): JSX.Element | undefined =>
   // Returns a new string made up of the first, and last, 8 characters of a given contract address.
-  contractAddress
-    ? `0x${contractAddress?.replace(/^[A-Fa-f0-9]{6}([A-Fa-f0-9]{8}).*([A-Fa-f0-9]{8})$/g, '$1...$2')}`
-    : undefined;
+  contractAddress ? (
+    <span data-testid="board-address">
+      `0x${contractAddress?.replace(/^[A-Fa-f0-9]{6}([A-Fa-f0-9]{8}).*([A-Fa-f0-9]{8})$/g, '$1...$2')}`
+    </span>
+  ) : undefined;

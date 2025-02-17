@@ -89,7 +89,7 @@ how to initialize and call smart contract code locally without running a node:
 
 ## CLI
 
-After building the smart contractm you can deploy it using the project in the subdirectory `counter-cli`:
+After building the smart contract you can deploy it using the project in the subdirectory `counter-cli`:
 
 ```sh
 cd ../counter-cli 

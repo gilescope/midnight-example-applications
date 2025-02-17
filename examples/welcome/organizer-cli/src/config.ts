@@ -60,24 +60,6 @@ export class StandaloneConfig implements Config {
   }
 }
 
-export class AriadneQaRemoteConfig implements Config {
-  privateStateStoreName = 'welcome-private-state';
-  logDir = path.resolve(currentDir, '..', 'logs', 'qa-remote', `${new Date().toISOString()}.log`);
-  zkConfigPath = path.resolve(currentDir, '..', '..', 'contract', 'dist', 'managed', 'welcome');
-  indexer = 'https://indexer.ariadne-qa.dev.midnight.network/api/v1/graphql';
-  indexerWS = 'wss://indexer.ariadne-qa.dev.midnight.network/api/v1/graphql/ws';
-  node = 'https://rpc.ariadne-qa.dev.midnight.network';
-  proofServer = 'http://127.0.0.1:6300';
-  initialParticipants = ['qa', 'tester', 'test', 'testing'];
-  setNetworkId() {
-    const theNetworkId = networkId.devnet;
-    setNetworkId(theNetworkId);
-    zswap.setNetworkId(toZswapNetworkId(theNetworkId));
-    runtime.setNetworkId(toRuntimeNetworkId(theNetworkId));
-    ledger.setNetworkId(toLedgerNetworkId(theNetworkId));
-  }
-}
-
 export class DevnetRemoteConfig implements Config {
   privateStateStoreName = 'welcome-private-state';
   logDir = path.resolve(currentDir, '..', 'logs', 'devnet-remote', `${new Date().toISOString()}.log`);
