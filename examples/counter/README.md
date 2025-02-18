@@ -82,6 +82,11 @@ how to initialize and call smart contract code locally without running a node:
    ```
    This creates the `dist` directory.
 
+4. Start unit tests:
+   ```sh
+   npx turbo test
+   ```
+
 ## CLI
 
 After building the smart contract you can deploy it using the project in the subdirectory `counter-cli`:

@@ -13,20 +13,24 @@
   "scripts": {
     "compact": "turbo run compact",
     "build": "turbo run build",
+    "test": "turbo run test",
+    "test-e2e": "turbo run test-e2e",
     "lint": "turbo run lint",
+    "check": "turbo run check --ignore packages/dao-ui-tests",
+    "dao-dapp": "turbo run start --filter=dao-dapp",
     "welcome-participant-ui": "turbo run start --filter=welcome-participant-ui",
     "welcome-organizer-cli": "turbo run start --filter=welcome-organizer-cli",
     "welcome-organizer-ui": "turbo run start --filter=welcome-organizer-ui",
     "bboard-ui": "turbo run start --filter=bboard-ui"
   },
   "resolutions": {
-    "@midnight-ntwrk/compact-runtime/@midnight-ntwrk/onchain-runtime": "^0.2.2",
-    "@midnight-ntwrk/zswap": "^3.0.2"
+    "@midnight-ntwrk/compact-runtime/@midnight-ntwrk/onchain-runtime": "^0.2.6",
+    "@midnight-ntwrk/zswap": "^3.0.6"
   },
   "dependencies": {
     "@midnight-ntwrk/compact-runtime": "^0.7.0",
-    "@midnight-ntwrk/dapp-connector-api": "^1.2.2",
-    "@midnight-ntwrk/ledger": "^3.0.2",
+    "@midnight-ntwrk/dapp-connector-api": "^1.2.3",
+    "@midnight-ntwrk/ledger": "^3.0.6",
     "@midnight-ntwrk/midnight-js-contracts": "0.2.5",
     "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "0.2.5",
     "@midnight-ntwrk/midnight-js-http-client-proof-provider": "0.2.5",
@@ -36,7 +40,7 @@
     "@midnight-ntwrk/midnight-js-node-zk-config-provider": "0.2.5",
     "@midnight-ntwrk/midnight-js-types": "0.2.5",
     "@midnight-ntwrk/midnight-js-utils": "0.2.5",
-    "@midnight-ntwrk/wallet": "^3.7.3",
+    "@midnight-ntwrk/wallet": "^3.7.5",
     "@midnight-ntwrk/wallet-api": "^3.5.0",
     "fp-ts": "^2.16.1",
     "io-ts": "^2.2.20",

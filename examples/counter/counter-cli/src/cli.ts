@@ -14,7 +14,7 @@ let logger: Logger;
  * This seed gives access to tokens minted in the genesis block of a local development node - only
  * used in standalone networks to build a wallet with initial funds.
  */
-const GENESIS_MINT_WALLET_SEED = '0000000000000000000000000000000000000000000000000000000000000042';
+const GENESIS_MINT_WALLET_SEED = '0000000000000000000000000000000000000000000000000000000000000001';
 
 const DEPLOY_OR_JOIN_QUESTION = `
 You can do one of the following:

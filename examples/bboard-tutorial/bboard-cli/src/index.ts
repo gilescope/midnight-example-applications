@@ -323,7 +323,7 @@ const buildWalletFromSeed = async (config: Config, rli: Interface, logger: Logge
  * This seed gives access to tokens minted in the genesis block of a local development node - only
  * used in standalone networks to build a wallet with initial funds.
  */
-const GENESIS_MINT_WALLET_SEED = '0000000000000000000000000000000000000000000000000000000000000042';
+const GENESIS_MINT_WALLET_SEED = '0000000000000000000000000000000000000000000000000000000000000001';
 
 /* **********************************************************************
  * buildWallet: unless running in a standalone (offline) mode,
